@@ -2,12 +2,19 @@
   "expo": {
     "name": "My Quick Trippers",
     "slug": "mqt-app",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon-v2.png",
+      "backgroundColor": "#127C82"
+    },
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Unlock the app with your fingerprint or face."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -27,6 +34,17 @@
         "projectId": "61ca1513-a157-469d-913e-e6db82aa9caa"
       }
     },
-    "owner": "myquicktrippers-team"
+    "owner": "myquicktrippers-team",
+    "plugins": [
+      "expo-image",
+      "expo-notifications",
+      "expo-splash-screen"
+    ],
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/61ca1513-a157-469d-913e-e6db82aa9caa"
+    }
   }
 }

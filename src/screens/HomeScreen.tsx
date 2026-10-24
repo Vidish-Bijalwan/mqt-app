@@ -1,27 +1,25 @@
 import React, { useMemo, useState } from 'react';
 import {
-  FlatList,
-  Image,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { BRAND } from '../constants';
-import { CATEGORIES, packageImageUrl, packages } from '../data/packages';
+import { COLORS, FONT, RADII, SPACING, TOUCH_MIN, WEIGHT } from '../theme/tokens';
+import { useCatalog } from '../lib/catalog';
+import { useAppConfig } from '../lib/appConfig';
+import { getHomeCardDensity } from '../lib/experiments';
+import { useSettings } from '../context/SettingsContext';
 import type { Package } from '../data/packages';
-import { getPriceInfo } from '../lib/price';
 import type { RootStackParamList } from '../navigation/types';
-import { PackageImage } from '../components/PackageImage';
-import { PriceBlock } from '../components/PriceBlock';
+import { HeaderLogo } from '../components/HeaderLogo';
+import { PackageList } from '../components/PackageList';
+import { FilterSheet } from '../components/FilterSheet';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
-
-// Logo asset: assets/logo.png (copied from the business logo).
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const LOGO = require('../../assets/logo.png');
 
 function matchesQuery(pkg: Package, query: string): boolean {
   const q = query.trim().toLowerCase();
@@ -32,48 +30,82 @@ function matchesQuery(pkg: Package, query: string): boolean {
   );
 }
 
-function PackageCard({
-  pkg,
-  onPress,
-}: {
-  pkg: Package;
-  onPress: () => void;
-}) {
-  const price = getPriceInfo(pkg);
-  return (
-    <Pressable onPress={onPress} style={styles.card}>
-      <PackageImage uri={packageImageUrl(pkg)} height={180} />
-      <View style={styles.cardBody}>
-        <Text style={styles.cardTitle} numberOfLines={2}>
-          {pkg.title}
-        </Text>
-        <Text style={styles.cardMeta}>
-          {pkg.category}
-          {pkg.duration ? `  ·  ${pkg.duration}` : ''}
-        </Text>
-        <PriceBlock price={price} />
-      </View>
-    </Pressable>
-  );
-}
-
+/**
+ * Home (v1.2 wiring): same layout as v1.1, but the list now comes from
+ * useCatalog() — live first, cache/bundled fallback, with a small source
+ * indicator and a refresh affordance. Visuals are otherwise unchanged;
+ * PackageList's inner cards are owned by another builder and still use
+ * the light tokens (see the v1.2 report's theme-coverage note).
+ */
 export function HomeScreen({ navigation }: Props) {
+  const catalog = useCatalog();
+  const { colors } = useSettings();
+  // ---- BEGIN v2 item 208 (A/B: home card density) — owned block ----
+  // Variant comes from remote-config flags via experiments.ts; missing
+  // flags resolve offline to the safe default ('comfortable'). Both
+  // variants render the same real PackageList below — density here
+  // varies Home-level spacing (search/filter/list chrome), because
+  // card internals live in PackageList (another builder's file) and
+  // this file must not edit it. COORDINATOR NOTE: AppFlags does not
+  // yet carry the exp_home-card-density key (see experiments.ts), so
+  // the default applies until that one-line parse addition lands.
+  const { config } = useAppConfig();
+  const density = getHomeCardDensity(config?.flags ?? null);
+  const isCompact = density === 'compact';
+  // ---- END v2 item 208 ----
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string | null>(null);
+  const [sheetVisible, setSheetVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
 
-  const filtered = useMemo(() => {
-    return packages.filter(
-      (pkg) =>
-        (category === null || pkg.category === category) &&
-        matchesQuery(pkg, query),
-    );
-  }, [query, category]);
+  const categories = useMemo(
+    () => Array.from(new Set(catalog.packages.map((p) => p.category))),
+    [catalog.packages],
+  );
+
+  const filtered = useMemo(
+    () =>
+      catalog.packages.filter(
+        (pkg) =>
+          (category === null || pkg.category === category) &&
+          matchesQuery(pkg, query),
+      ),
+    [catalog.packages, query, category],
+  );
+
+  const activeFilterCount = category === null ? 0 : 1;
+
+  const sourceLabel =
+    catalog.source === 'live'
+      ? 'Live catalogue'
+      : catalog.source === 'cache'
+        ? 'Saved catalogue (offline)'
+        : 'Bundled catalogue';
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    catalog.refresh();
+    setTimeout(() => {
+      setLastRefreshed(new Date());
+      setRefreshing(false);
+    }, 250);
+  };
+
+  const lastRefreshedLabel = lastRefreshed.toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      edges={['top', 'left', 'right']}>
       <View style={styles.header}>
-        <Image source={LOGO} style={styles.logo} resizeMode="contain" />
-        <Text style={styles.brandName}>My Quick Trippers</Text>
+        <HeaderLogo variant="white" size={100} />
+        <Text style={styles.brandName} numberOfLines={1}>
+          My Quick Trippers
+        </Text>
         <Pressable
           onPress={() => navigation.navigate('Blog')}
           style={styles.blogButton}>
@@ -81,172 +113,172 @@ export function HomeScreen({ navigation }: Props) {
         </Pressable>
       </View>
 
-      <View style={styles.searchWrap}>
+      <View
+        style={[
+          styles.searchWrap,
+          // v2 item 208: density variant spacing (see owned block above).
+          isCompact ? styles.searchWrapCompact : styles.searchWrapComfortable,
+        ]}>
         <TextInput
-          style={styles.search}
+          style={[styles.search, { borderColor: colors.border, color: colors.text }]}
           placeholder="Search packages or destinations…"
-          placeholderTextColor={BRAND.muted}
+          placeholderTextColor={colors.muted}
           value={query}
           onChangeText={setQuery}
           returnKeyType="search"
         />
       </View>
 
-      <View style={styles.chipsWrap}>
+      <View
+        style={[
+          styles.filterRow,
+          // v2 item 208: density variant spacing (see owned block above).
+          isCompact ? styles.filterRowCompact : styles.filterRowComfortable,
+        ]}>
         <Pressable
-          onPress={() => setCategory(null)}
-          style={[styles.chip, category === null && styles.chipActive]}>
-          <Text
-            style={[
-              styles.chipText,
-              category === null && styles.chipTextActive,
-            ]}>
-            All
+          onPress={() => setSheetVisible(true)}
+          style={styles.filtersButton}>
+          <Text style={styles.filtersButtonText}>
+            Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
           </Text>
         </Pressable>
-        {CATEGORIES.map((c) => (
-          <Pressable
-            key={c}
-            onPress={() => setCategory(c)}
-            style={[styles.chip, category === c && styles.chipActive]}>
-            <Text
-              style={[
-                styles.chipText,
-                category === c && styles.chipTextActive,
-              ]}>
-              {c}
-            </Text>
-          </Pressable>
-        ))}
+        <Text style={styles.refreshStamp} numberOfLines={1}>
+          {sourceLabel} · {lastRefreshedLabel}
+        </Text>
+      </View>
+      {catalog.error !== null ? (
+        <Pressable onPress={catalog.refresh} style={styles.errorRow}>
+          <Text style={styles.errorText} numberOfLines={2}>
+            {catalog.error.message} Tap to retry.
+          </Text>
+        </Pressable>
+      ) : null}
+
+      <View
+        style={[
+          styles.listWrap,
+          // v2 item 208: density variant spacing (see owned block above).
+          isCompact ? styles.listWrapCompact : styles.listWrapComfortable,
+        ]}>
+        <PackageList
+          packages={filtered}
+          onPressPackage={(pkg) =>
+            navigation.navigate('PackageDetail', { slug: pkg.slug })
+          }
+          onEnquirePackage={(pkg) =>
+            navigation.navigate('Enquiry', {
+              slug: pkg.slug,
+              packageName: pkg.title,
+            })
+          }
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+        />
       </View>
 
-      <FlatList
-        data={filtered}
-        keyExtractor={(pkg) => pkg.slug}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <Text style={styles.empty}>
-            No packages match your search. Try a different destination or
-            category.
-          </Text>
-        }
-        renderItem={({ item }) => (
-          <PackageCard
-            pkg={item}
-            onPress={() =>
-              navigation.navigate('PackageDetail', { slug: item.slug })
-            }
-          />
-        )}
+      <FilterSheet
+        visible={sheetVisible}
+        categories={categories}
+        selected={category}
+        onClose={() => setSheetVisible(false)}
+        onApply={(c) => setCategory(c)}
+        onClear={() => setCategory(null)}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: BRAND.background,
+    backgroundColor: COLORS.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: BRAND.primary,
-  },
-  logo: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
+    gap: SPACING.sm,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    backgroundColor: COLORS.primary,
   },
   brandName: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    flex: 1,
+    flexShrink: 1,
+    fontSize: 18,
+    fontWeight: WEIGHT.bold,
+    color: COLORS.white,
   },
   blogButton: {
     marginLeft: 'auto',
+    minHeight: TOUCH_MIN,
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: 20,
+    borderRadius: RADII.chip,
     paddingHorizontal: 14,
-    paddingVertical: 6,
   },
   blogButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
+    color: COLORS.white,
+    fontWeight: WEIGHT.medium,
     fontSize: 14,
   },
   searchWrap: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
   },
+  // v2 item 208: density variants (comfortable = shipped spacing).
+  searchWrapCompact: { paddingTop: SPACING.xs, paddingHorizontal: SPACING.md },
+  searchWrapComfortable: { paddingTop: SPACING.md, paddingHorizontal: SPACING.lg },
   search: {
+    height: TOUCH_MIN,
     borderWidth: 1,
-    borderColor: BRAND.border,
-    borderRadius: 10,
+    borderColor: COLORS.border,
+    borderRadius: RADII.button,
     paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: BRAND.text,
+    fontSize: FONT.body,
+    color: COLORS.text,
   },
-  chipsWrap: {
+  filterRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    paddingHorizontal: 16,
-    marginTop: 10,
+    alignItems: 'center',
+    gap: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    marginTop: SPACING.sm,
   },
-  chip: {
+  // v2 item 208: density variants (comfortable = shipped spacing).
+  filterRowCompact: { marginTop: 0, paddingHorizontal: SPACING.md, gap: SPACING.sm },
+  filterRowComfortable: { marginTop: SPACING.sm, paddingHorizontal: SPACING.lg, gap: SPACING.md },
+  filtersButton: {
+    minHeight: TOUCH_MIN,
+    justifyContent: 'center',
     borderWidth: 1,
-    borderColor: BRAND.border,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    borderColor: COLORS.primary,
+    borderRadius: RADII.button,
+    paddingHorizontal: SPACING.lg,
   },
-  chipActive: {
-    backgroundColor: BRAND.primary,
-    borderColor: BRAND.primary,
+  filtersButtonText: {
+    color: COLORS.primary,
+    fontSize: FONT.body,
+    fontWeight: WEIGHT.bold,
   },
-  chipText: {
-    fontSize: 14,
-    color: BRAND.text,
+  refreshStamp: {
+    flex: 1,
+    flexShrink: 1,
+    fontSize: FONT.meta,
+    color: COLORS.muted,
+    textAlign: 'right',
   },
-  chipTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
+  errorRow: {
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    backgroundColor: COLORS.errorBg,
   },
-  list: {
-    padding: 16,
-    gap: 16,
+  errorText: { fontSize: FONT.meta, color: COLORS.errorText },
+  listWrap: {
+    flex: 1,
   },
-  card: {
-    backgroundColor: BRAND.cardBackground,
-    borderWidth: 1,
-    borderColor: BRAND.border,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  cardBody: {
-    padding: 14,
-  },
-  cardTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: BRAND.text,
-  },
-  cardMeta: {
-    fontSize: 13,
-    color: BRAND.muted,
-    marginTop: 4,
-  },
-  empty: {
-    fontSize: 15,
-    color: BRAND.muted,
-    textAlign: 'center',
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
+  // v2 item 208: density variants. The list itself is PackageList
+  // (another builder's file); these wrap styles are Home-level only.
+  listWrapCompact: { paddingTop: 0 },
+  listWrapComfortable: { paddingTop: SPACING.sm },
 });

@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { BRAND } from '../constants';
+import { WEIGHT } from '../theme/tokens';
+import { useSettings } from '../context/SettingsContext';
 import type { PriceInfo } from '../lib/price';
 
 interface Props {
@@ -13,6 +14,8 @@ interface Props {
  * renders "Pricing on request" and no number at all.
  */
 export function PriceBlock({ price }: Props) {
+  const { colors, fs } = useSettings();
+  const styles = makeStyles(colors, fs);
   if (!price.hasPrice) {
     return (
       <View style={styles.container}>
@@ -41,7 +44,8 @@ export function PriceBlock({ price }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: { text: string; muted: string; primary: string; estimatedBg: string; estimatedText: string }, fs: (base: number) => number) {
+  return StyleSheet.create({
   container: {
     marginTop: 6,
   },
@@ -52,33 +56,34 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   display: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: BRAND.text,
+    fontSize: fs(18),
+    fontWeight: WEIGHT.bold,
+    color: colors.text,
   },
   crossed: {
-    fontSize: 14,
-    color: BRAND.muted,
+    fontSize: fs(14),
+    color: colors.muted,
     textDecorationLine: 'line-through',
   },
   save: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: BRAND.primary,
+    fontSize: fs(13),
+    fontWeight: WEIGHT.medium,
+    color: colors.primary,
   },
   estimated: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: BRAND.estimatedText,
-    backgroundColor: BRAND.estimatedBackground,
+    fontSize: fs(12),
+    fontWeight: WEIGHT.medium,
+    color: colors.estimatedText,
+    backgroundColor: colors.estimatedBg,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
     overflow: 'hidden',
   },
   onRequest: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: BRAND.muted,
+    fontSize: fs(15),
+    fontWeight: WEIGHT.medium,
+    color: colors.muted,
   },
 });
+}

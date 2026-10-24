@@ -1,13 +1,15 @@
 import React from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { BRAND } from '../constants';
 import { whatsappUrl } from '../lib/contact';
+import { useSettings } from '../context/SettingsContext';
 import type { RootStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PaySuccess'>;
 
 export function PaySuccessScreen({ route, navigation }: Props) {
+  const { colors, fs } = useSettings();
+  const styles = makeStyles(colors, fs);
   const { orderId, paymentId } = route.params;
   const whatsappMessage =
     `Hi My Quick Trippers! I just completed a payment in the app.` +
@@ -42,27 +44,29 @@ export function PaySuccessScreen({ route, navigation }: Props) {
       </Pressable>
       <Pressable
         style={[styles.button, styles.secondaryButton]}
-        onPress={() => navigation.navigate('Home')}>
+        onPress={() => navigation.navigate('Tabs', { screen: 'Home' })}>
         <Text style={styles.secondaryButtonText}>Back to Home</Text>
       </Pressable>
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: BRAND.background },
+function makeStyles(colors: { background: string; text: string; muted: string; border: string; primary: string; estimatedBg: string; errorBg: string; errorText: string; inputBg: string }, fs: (base: number) => number) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   body: { padding: 16, paddingBottom: 32 },
-  title: { fontSize: 22, fontWeight: '700', color: BRAND.text },
-  text: { fontSize: 16, color: BRAND.text, marginTop: 10, lineHeight: 22 },
+  title: { fontSize: fs(22), fontWeight: '700', color: colors.text },
+  text: { fontSize: fs(16), color: colors.text, marginTop: 10, lineHeight: 22 },
   bold: { fontWeight: '700' },
   button: {
     borderRadius: 10,
-    paddingVertical: 13,
+    paddingVertical: 15,
     alignItems: 'center',
     marginTop: 16,
   },
-  primaryButton: { backgroundColor: BRAND.primary },
-  secondaryButton: { borderWidth: 1, borderColor: BRAND.primary },
-  buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
-  secondaryButtonText: { color: BRAND.primary, fontSize: 16, fontWeight: '700' },
+  primaryButton: { backgroundColor: colors.primary },
+  secondaryButton: { borderWidth: 1, borderColor: colors.primary },
+  buttonText: { color: '#FFFFFF', fontSize: fs(16), fontWeight: '700' },
+  secondaryButtonText: { color: colors.primary, fontSize: fs(16), fontWeight: '700' },
 });
+}

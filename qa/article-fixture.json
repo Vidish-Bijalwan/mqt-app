@@ -1,0 +1,37 @@
+{
+ "note": "VERBATIM excerpt (first 8 blocks) of the kedarnath-yatra-2027-complete-travel-guide factory body from src/data/blogPosts/bodies/batch-1a.ts on branch app-api-v12. QA interception ONLY: the /api/blog/posts/[slug] route is not on production until PR #251 merges, so the QA run intercepts the route with this verbatim payload to verify the native renderer. Never shipped as app content.",
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Planning the Kedarnath Yatra 2027 begins long before you set foot in the mountains. This is one of India's most demanding and most rewarding pilgrimages \u2014 a journey to a 3,500-plus-metre shrine that sits beneath the Kedarnath peak in the Rudraprayag district of Uttarakhand, reached after a steep mountain trek of around 16 kilometres. Millions attempt it every season, and the difference between a smooth yatra and a miserable one almost always comes down to preparation."
+  },
+  {
+   "type": "p",
+   "text": "This complete guide covers everything a first-time pilgrim needs: the best time to visit, how to reach Kedarnath from Delhi, Haridwar and Dehradun, the registration process, what the trek actually feels like, helicopter options, where the journey can be extended, and a practical day-wise itinerary. Whether you are travelling solo, with family, or with senior citizens, use this as your single reference for the 2027 season."
+  },
+  {
+   "type": "h2",
+   "text": "Why the Kedarnath Yatra Matters"
+  },
+  {
+   "type": "p",
+   "text": "Kedarnath is one of the twelve Jyotirlingas \u2014 the holiest Shiva shrines in Hinduism \u2014 and the most remote of the Char Dham temples of Uttarakhand. Legend holds that the Pandavas sought Lord Shiva here to atone after the Kurukshetra war, and that Shiva, eluding them in the form of a bull, dived into the ground, leaving his hump at Kedarnath. That hump is worshipped in the sanctum of the ancient stone temple, which is believed to be over a thousand years old."
+  },
+  {
+   "type": "p",
+   "text": "The shrine stands on the banks of the Mandakini river, flanked by towering snow peaks. In June 2013, devastating flash floods destroyed much of the Kedarpuri township \u2014 yet the temple itself stood firm, an event devotees regard as miraculous. The entire base infrastructure has since been rebuilt with wider paths, retaining walls, shelters and medical posts, making the modern yatra far safer than it was a decade ago. Even so, this remains a high-altitude pilgrimage, and it deserves respect and preparation."
+  },
+  {
+   "type": "h2",
+   "text": "Best Time for Kedarnath Yatra 2027"
+  },
+  {
+   "type": "p",
+   "text": "The Kedarnath temple is open only for about six months a year. The shrine typically opens in late April or May \u2014 the exact 2027 opening date is announced by the temple authorities and the Uttarakhand government closer to the season, so confirm before booking \u2014 and closes around Diwali in October or November, when the deity is ceremonially moved to Ukhimath for winter worship. We track the announced dates and the closing schedule in our [Kedarnath opening date and kapat closing guide](/blog/kedarnath-opening-date-2026)."
+  },
+  {
+   "type": "p",
+   "text": "The sweet spots are May to mid-June and mid-September to October. May and June bring the longest daylight hours and the full buzz of the yatra season, but also the biggest crowds. September and October, after the monsoon withdraws, offer the clearest skies, crisp mountain views and noticeably thinner crowds \u2014 many experienced travellers consider this the finest window. The monsoon months of July and August see heavy rain, landslide risk and frequent road disruptions on the Char Dham route; avoid them if your dates are flexible."
+  }
+ ]
+}

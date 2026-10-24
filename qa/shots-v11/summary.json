@@ -1,0 +1,232 @@
+{
+  "390": {
+    "shots": {
+      "home": {
+        "file": "home-390.png",
+        "overflow": {
+          "docScroll": 390,
+          "docClient": 390,
+          "bodyScroll": 390,
+          "bodyClient": 390,
+          "innerWidth": 390
+        }
+      },
+      "filters": {
+        "file": "filters-390.png",
+        "overflow": {
+          "docScroll": 390,
+          "docClient": 390,
+          "bodyScroll": 390,
+          "bodyClient": 390,
+          "innerWidth": 390
+        }
+      },
+      "packages": {
+        "file": "packages-390.png",
+        "overflow": {
+          "docScroll": 390,
+          "docClient": 390,
+          "bodyScroll": 390,
+          "bodyClient": 390,
+          "innerWidth": 390
+        }
+      },
+      "trips": {
+        "file": "trips-390.png",
+        "overflow": {
+          "docScroll": 390,
+          "docClient": 390,
+          "bodyScroll": 390,
+          "bodyClient": 390,
+          "innerWidth": 390
+        }
+      },
+      "account": {
+        "file": "account-390.png",
+        "overflow": {
+          "docScroll": 390,
+          "docClient": 390,
+          "bodyScroll": 390,
+          "bodyClient": 390,
+          "innerWidth": 390
+        }
+      },
+      "detail": {
+        "file": "detail-390.png",
+        "overflow": {
+          "docScroll": 390,
+          "docClient": 390,
+          "bodyScroll": 390,
+          "bodyClient": 390,
+          "innerWidth": 390
+        }
+      },
+      "enquiry": {
+        "file": "enquiry-390.png",
+        "overflow": {
+          "docScroll": 390,
+          "docClient": 390,
+          "bodyScroll": 390,
+          "bodyClient": 390,
+          "innerWidth": 390
+        }
+      },
+      "pay": {
+        "file": "pay-390.png",
+        "overflow": {
+          "docScroll": 390,
+          "docClient": 390,
+          "bodyScroll": 390,
+          "bodyClient": 390,
+          "innerWidth": 390
+        }
+      },
+      "blog": {
+        "file": "blog-390.png",
+        "overflow": {
+          "docScroll": 390,
+          "docClient": 390,
+          "bodyScroll": 390,
+          "bodyClient": 390,
+          "innerWidth": 390
+        }
+      }
+    },
+    "pageErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ],
+    "optimizerRequests": 59,
+    "optimizerStatuses": [],
+    "optimizerSample": [
+      "https://www.myquicktrippers.com/_next/image?url=%2Fimages%2Fpackages%2Fhi-kaziranga-tour-package.webp&w=750&q=75",
+      "https://www.myquicktrippers.com/_next/image?url=%2Fimages%2Fpackages%2Fhi-12-jyotirlinga-tour-package.webp&w=750&q=75",
+      "https://www.myquicktrippers.com/_next/image?url=%2Fimages%2Fpackages%2Fhi-odisha.webp&w=750&q=75"
+    ],
+    "imageRequests": 124
+  },
+  "1440": {
+    "shots": {
+      "home": {
+        "file": "home-1440.png",
+        "overflow": {
+          "docScroll": 1440,
+          "docClient": 1440,
+          "bodyScroll": 1440,
+          "bodyClient": 1440,
+          "innerWidth": 1440
+        }
+      },
+      "filters": {
+        "file": "filters-1440.png",
+        "overflow": {
+          "docScroll": 1440,
+          "docClient": 1440,
+          "bodyScroll": 1440,
+          "bodyClient": 1440,
+          "innerWidth": 1440
+        }
+      },
+      "packages": {
+        "file": "packages-1440.png",
+        "overflow": {
+          "docScroll": 1440,
+          "docClient": 1440,
+          "bodyScroll": 1440,
+          "bodyClient": 1440,
+          "innerWidth": 1440
+        }
+      },
+      "trips": {
+        "file": "trips-1440.png",
+        "overflow": {
+          "docScroll": 1440,
+          "docClient": 1440,
+          "bodyScroll": 1440,
+          "bodyClient": 1440,
+          "innerWidth": 1440
+        }
+      },
+      "account": {
+        "file": "account-1440.png",
+        "overflow": {
+          "docScroll": 1440,
+          "docClient": 1440,
+          "bodyScroll": 1440,
+          "bodyClient": 1440,
+          "innerWidth": 1440
+        }
+      },
+      "detail": {
+        "file": "detail-1440.png",
+        "overflow": {
+          "docScroll": 1440,
+          "docClient": 1440,
+          "bodyScroll": 1440,
+          "bodyClient": 1440,
+          "innerWidth": 1440
+        }
+      },
+      "enquiry": {
+        "file": "enquiry-1440.png",
+        "overflow": {
+          "docScroll": 1440,
+          "docClient": 1440,
+          "bodyScroll": 1440,
+          "bodyClient": 1440,
+          "innerWidth": 1440
+        }
+      },
+      "pay": {
+        "file": "pay-1440.png",
+        "overflow": {
+          "docScroll": 1440,
+          "docClient": 1440,
+          "bodyScroll": 1440,
+          "bodyClient": 1440,
+          "innerWidth": 1440
+        }
+      },
+      "blog": {
+        "file": "blog-1440.png",
+        "overflow": {
+          "docScroll": 1440,
+          "docClient": 1440,
+          "bodyScroll": 1440,
+          "bodyClient": 1440,
+          "innerWidth": 1440
+        }
+      }
+    },
+    "pageErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ],
+    "optimizerRequests": 62,
+    "optimizerStatuses": [],
+    "optimizerSample": [
+      "https://www.myquicktrippers.com/_next/image?url=%2Fimages%2Fpackages%2Fhi-kaziranga-tour-package.webp&w=750&q=75",
+      "https://www.myquicktrippers.com/_next/image?url=%2Fimages%2Fpackages%2Fhi-12-jyotirlinga-tour-package.webp&w=750&q=75",
+      "https://www.myquicktrippers.com/_next/image?url=%2Fimages%2Fpackages%2Fhi-odisha.webp&w=750&q=75"
+    ],
+    "imageRequests": 130
+  }
+}
