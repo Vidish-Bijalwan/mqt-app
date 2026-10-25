@@ -37,6 +37,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -74,6 +75,29 @@ const GREETING =
   "Hi! I'm MQT Support, from Amit's team at My Quick Trippers. " +
   'Ask me about packages, prices, or how booking works — I answer ' +
   'instantly, and anything that needs a human I forward to Amit.';
+
+// v2.0.3: persona avatar is the app's own launcher mark
+// (assets/icon.png — the MQT brand mark), NOT a human face photo and
+// NOT a fake employee: the persona stays "MQT Support, from Amit's
+// team" and the avatar is the brand, so nothing here implies a real
+// person is typing.
+const MQT_AVATAR = require('../../assets/icon.png');
+
+function AssistantAvatar({ colors }: { colors: { border: string } }) {
+  return (
+    <View
+      style={[
+        styles.avatarWrap,
+        { borderColor: colors.border },
+      ]}>
+      <Image
+        source={MQT_AVATAR}
+        style={styles.avatar}
+        accessibilityLabel="MQT Support"
+      />
+    </View>
+  );
+}
 
 let nextId = 1;
 
@@ -254,8 +278,14 @@ export function SupportChatScreen({ route, navigation }: Props) {
         style={styles.thread}
         contentContainerStyle={styles.threadContent}
         onContentSizeChange={scrollToEnd}>
-        {messages.map((msg) => (
-          <View key={msg.id}>
+        {messages.map((msg) => {
+          // v2.0.3 layout: assistant messages sit in a left-aligned
+          // row (brand avatar + column) capped at ~80% width, with a
+          // small muted "MQT Support" name line above the bubble.
+          // User messages stay right-aligned. The bubble text,
+          // actions, suggestions, error fallbacks and every handler
+          // are unchanged — only the row wrapping moved.
+          const bubble = (
             <View
               style={[
                 styles.bubble,
@@ -334,84 +364,124 @@ export function SupportChatScreen({ route, navigation }: Props) {
                 </View>
               ) : null}
             </View>
-            {msg.actions !== undefined && msg.actions.length > 0 ? (
-              <View style={styles.actionRow}>
-                {msg.actions.filter(visibleAction).map((action, i) => (
-                  <Pressable
-                    key={`${msg.id}-${i}`}
-                    style={[
-                      styles.actionButton,
-                      {
-                        borderColor: colors.primary,
-                        backgroundColor: colors.card,
-                      },
-                    ]}
-                    onPress={() => runAction(action)}>
-                    <Text
+          );
+          const extras = (
+            <>
+              {msg.actions !== undefined && msg.actions.length > 0 ? (
+                <View style={styles.actionRow}>
+                  {msg.actions.filter(visibleAction).map((action, i) => (
+                    <Pressable
+                      key={`${msg.id}-${i}`}
                       style={[
-                        styles.actionButtonText,
-                        { color: colors.primary, fontSize: fs(FONT.meta) },
-                      ]}>
-                      {action.label}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            ) : null}
-            {msg.suggestions !== undefined && msg.suggestions.length > 0 ? (
-              <View style={styles.chipRow}>
-                {msg.suggestions.map((suggestion, i) => (
-                  <Pressable
-                    key={`${msg.id}-s-${i}`}
-                    style={[
-                      styles.chip,
-                      {
-                        borderColor: colors.border,
-                        backgroundColor: colors.card,
-                      },
-                    ]}
-                    onPress={() => void send(suggestion)}>
-                    <Text
+                        styles.actionButton,
+                        {
+                          borderColor: colors.primary,
+                          backgroundColor: colors.card,
+                        },
+                      ]}
+                      onPress={() => runAction(action)}>
+                      <Text
+                        style={[
+                          styles.actionButtonText,
+                          { color: colors.primary, fontSize: fs(FONT.meta) },
+                        ]}>
+                        {action.label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : null}
+              {msg.suggestions !== undefined && msg.suggestions.length > 0 ? (
+                <View style={styles.chipRow}>
+                  {msg.suggestions.map((suggestion, i) => (
+                    <Pressable
+                      key={`${msg.id}-s-${i}`}
                       style={[
-                        styles.chipText,
-                        { color: colors.text, fontSize: fs(FONT.meta) },
-                      ]}>
-                      {suggestion}
-                    </Text>
-                  </Pressable>
-                ))}
+                        styles.chip,
+                        {
+                          borderColor: colors.border,
+                          backgroundColor: colors.card,
+                        },
+                      ]}
+                      onPress={() => void send(suggestion)}>
+                      <Text
+                        style={[
+                          styles.chipText,
+                          { color: colors.text, fontSize: fs(FONT.meta) },
+                        ]}>
+                        {suggestion}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : null}
+            </>
+          );
+          if (msg.role === 'user') {
+            return (
+              <View key={msg.id} style={styles.userRow}>
+                {bubble}
+                {extras}
               </View>
-            ) : null}
-          </View>
-        ))}
+            );
+          }
+          return (
+            <View key={msg.id} style={styles.assistantRow}>
+              <AssistantAvatar colors={colors} />
+              <View style={styles.assistantColumn}>
+                {msg.role === 'assistant' ? (
+                  <Text
+                    style={[
+                      styles.assistantName,
+                      { color: colors.muted, fontSize: fs(FONT.meta) },
+                    ]}>
+                    MQT Support
+                  </Text>
+                ) : null}
+                {bubble}
+                {extras}
+              </View>
+            </View>
+          );
+        })}
         {sending ? (
-          <View
-            style={[
-              styles.bubble,
-              styles.assistantBubble,
-              { backgroundColor: colors.card, borderColor: colors.border },
-            ]}>
-            <Text
+          <View style={styles.assistantRow}>
+            <AssistantAvatar colors={colors} />
+            <View
               style={[
-                styles.bubbleText,
-                { fontSize: fs(FONT.body), color: colors.muted },
+                styles.bubble,
+                styles.assistantBubble,
+                { backgroundColor: colors.card, borderColor: colors.border },
               ]}>
-              MQT Support is typing…
-            </Text>
+              <Text
+                style={[
+                  styles.bubbleText,
+                  { fontSize: fs(FONT.body), color: colors.muted },
+                ]}>
+                MQT Support is typing…
+              </Text>
+            </View>
           </View>
         ) : null}
       </ScrollView>
 
+      {/* v2.0.3: lighter handoff bar — card background, both actions
+          as outline buttons instead of one solid block. Handlers are
+          EXACTLY as before (same whatsappAction summary, same
+          confirm-gated enquiry form toggle below); only the chrome
+          lightened, because the old solid bar read heavier than the
+          chat thread above it. The Confirm button inside the form
+          stays solid, so the confirm step is still unmistakable. */}
       <View
-        style={[styles.handoff, { borderTopColor: colors.border }]}>
+        style={[styles.handoff, { borderTopColor: colors.border, backgroundColor: colors.card }]}>
         <Text style={[styles.handoffLabel, { color: colors.muted, fontSize: fs(FONT.meta) }]}>
           Need a human? Forward this chat to Amit:
         </Text>
         <View style={styles.handoffRow}>
           <Pressable
-            style={[styles.handoffButton, { backgroundColor: colors.primary }]}
+            style={[styles.handoffButton, styles.handoffOutline, { borderColor: colors.primary }]}
             onPress={() => void whatsappAction(whatsappSummary(messages))}>
-            <Text style={[styles.handoffButtonText, { fontSize: fs(FONT.body) }]}>
+            <Text style={[styles.handoffButtonText, { color: colors.primary, fontSize: fs(FONT.body) }]}>
               Send to Amit on WhatsApp
             </Text>
           </Pressable>
@@ -523,11 +593,33 @@ const styles = StyleSheet.create({
   personaSub: { color: '#FFFFFF', marginTop: 2, opacity: 0.9 },
   thread: { flex: 1 },
   threadContent: { padding: SPACING.lg, gap: SPACING.md, paddingBottom: SPACING.xl },
+  // v2.0.3: assistant rows cap at 80% of the thread width (avatar +
+  // column share that budget; the bubble itself is 100% of the
+  // column). User rows stay right-aligned at 85%.
+  assistantRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING.sm,
+    maxWidth: '80%',
+    alignSelf: 'flex-start',
+  },
+  assistantColumn: { flexShrink: 1, gap: 2 },
+  assistantName: { fontWeight: WEIGHT.medium },
+  userRow: { maxWidth: '85%', alignSelf: 'flex-end' },
+  avatarWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+    flexShrink: 0,
+  },
+  avatar: { width: '100%', height: '100%' },
   bubble: {
     borderRadius: RADII.card,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
-    maxWidth: '85%',
+    maxWidth: '100%',
     alignSelf: 'flex-start',
   },
   userBubble: { alignSelf: 'flex-end' },
@@ -548,7 +640,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: SPACING.sm,
     marginTop: SPACING.sm,
-    maxWidth: '85%',
+    maxWidth: '100%',
   },
   actionButton: {
     borderWidth: 1,
@@ -563,7 +655,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: SPACING.sm,
     marginTop: SPACING.sm,
-    maxWidth: '92%',
+    maxWidth: '100%',
   },
   chip: {
     borderWidth: 1,
@@ -583,6 +675,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  handoffOutline: { borderWidth: 1 },
   handoffButtonText: { color: '#FFFFFF', fontWeight: WEIGHT.bold },
   enquiryForm: { marginTop: SPACING.md, gap: SPACING.sm },
   enquiryLabel: { lineHeight: 20 },

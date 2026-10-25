@@ -32,6 +32,7 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { APP_VERSION, BRAND, CONTACT } from '../constants';
 import { callAction, whatsappAction } from '../lib/contact';
+import { useUpdateChecker } from '../lib/appUpdates';
 import { FONT, RADII, SPACING, TOUCH_MIN, WEIGHT } from '../theme/tokens';
 import { useSettings } from '../context/SettingsContext';
 import {
@@ -78,6 +79,10 @@ export function AccountScreen() {
   });
   const [profileSaved, setProfileSaved] = useState(false);
   const [biometricNote, setBiometricNote] = useState<string | null>(null);
+  // v2.0.3: in-app OTA update check (expo-updates). Restart happens
+  // only from the explicit "Restart now" tap below — never here, and
+  // never automatically after a download.
+  const update = useUpdateChecker();
   const [unlocked, setUnlocked] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
 
@@ -558,6 +563,61 @@ export function AccountScreen() {
               <Text style={[styles.navChevron, { color: colors.muted }]}>›</Text>
             </Pressable>
           ))}
+        </View>
+
+        <Text style={[styles.sectionTitle, { color: colors.text, fontSize: fs(FONT.heading) }]}>
+          App updates
+        </Text>
+        <Text style={[styles.note, { color: colors.muted, fontSize: fs(FONT.body) }]}>
+          Fixes for this installed version arrive over the air — no store
+          download needed. An update is only applied when you tap
+          Restart now. In the web preview the check reports up to date;
+          the real check runs on the installed app.
+        </Text>
+        <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.card }]}>
+          {update.status === 'checking' ? (
+            <Text style={[styles.note, { color: colors.muted, fontSize: fs(FONT.body) }]}>
+              Checking for updates…
+            </Text>
+          ) : update.status === 'downloading' ? (
+            <Text style={[styles.note, { color: colors.muted, fontSize: fs(FONT.body) }]}>
+              Downloading update…
+            </Text>
+          ) : update.status === 'ready' ? (
+            <>
+              <Text style={[styles.note, { color: colors.text, fontSize: fs(FONT.body) }]}>
+                Update downloaded — restart to apply it.
+              </Text>
+              <Pressable style={[styles.button, styles.primaryButton]} onPress={() => void update.restartNow()}>
+                <Text style={styles.buttonText}>Restart now</Text>
+              </Pressable>
+              <Pressable style={[styles.button, styles.outlineButton]} onPress={update.dismissReady}>
+                <Text style={[styles.outlineButtonText, { color: colors.primary }]}>Later</Text>
+              </Pressable>
+            </>
+          ) : update.status === 'up-to-date' ? (
+            <>
+              <Text style={[styles.note, { color: colors.muted, fontSize: fs(FONT.body) }]}>
+                You&apos;re up to date.
+              </Text>
+              <Pressable style={[styles.button, styles.outlineButton]} onPress={() => void update.checkForUpdates()}>
+                <Text style={[styles.outlineButtonText, { color: colors.primary }]}>Check again</Text>
+              </Pressable>
+            </>
+          ) : update.status === 'error' ? (
+            <>
+              <Text style={[styles.note, { color: colors.muted, fontSize: fs(FONT.body) }]}>
+                {update.error ?? 'Could not check for updates.'}
+              </Text>
+              <Pressable style={[styles.button, styles.outlineButton]} onPress={() => void update.checkForUpdates()}>
+                <Text style={[styles.outlineButtonText, { color: colors.primary }]}>Retry</Text>
+              </Pressable>
+            </>
+          ) : (
+            <Pressable style={[styles.button, styles.primaryButton]} onPress={() => void update.checkForUpdates()}>
+              <Text style={styles.buttonText}>Check for updates</Text>
+            </Pressable>
+          )}
         </View>
 
         <Text style={[styles.version, { color: colors.muted, fontSize: fs(FONT.meta) }]}>

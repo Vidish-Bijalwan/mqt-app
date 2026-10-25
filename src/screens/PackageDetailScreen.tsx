@@ -31,6 +31,7 @@ import { getPackageNote, setPackageNote } from '../lib/notes';
 import type { RootStackParamList } from '../navigation/types';
 import { PackageGallery } from '../components/PackageGallery';
 import { PriceBlock } from '../components/PriceBlock';
+import { useReducedMotion } from '../components/Motion';
 import {
   packageSiteUrl,
   routeStops,
@@ -68,14 +69,55 @@ export function PackageDetailScreen({ route, navigation }: Props) {
   // v2 item 87: personal note for this package, device-local.
   const [note, setNote] = useState('');
   const [noteSaved, setNoteSaved] = useState(false);
+  // v2.0.3: below-the-fold content renders only after first paint
+  // (see the deferredReady effect below). The first render is just
+  // the photo skeleton, title, price and actions — text-first, so a
+  // slow connection never holds the title hostage behind the
+  // similar-packages computation or the long section tree.
+  const [deferredReady, setDeferredReady] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    // Deferral pattern (NOT InteractionManager): it was removed from
+    // react-native core in 0.88 (see catalog.ts) — importing it is a
+    // type error and accessing it throws in DEV. requestAnimationFrame
+    // + a zero-delay timeout = after the paint the frame schedules,
+    // with an 800ms fallback guard so the below-fold sections are
+    // never lost if the frame callback never runs.
+    let done = false;
+    let rafId: number | null = null;
+    let timer0: ReturnType<typeof setTimeout> | null = null;
+    const run = () => {
+      if (done) return;
+      done = true;
+      setDeferredReady(true);
+    };
+    if (typeof requestAnimationFrame === 'function') {
+      rafId = requestAnimationFrame(() => {
+        timer0 = setTimeout(run, 0);
+      });
+    }
+    const fallback = setTimeout(run, 800);
+    return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      if (timer0 !== null) clearTimeout(timer0);
+      clearTimeout(fallback);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Reduced motion: no photo fade/scale at all — the photo value
+    // jumps straight to 1 instead of animating to it.
+    if (reduceMotion) {
+      photoAnim.setValue(1);
+      return;
+    }
     Animated.timing(photoAnim, {
       toValue: 1,
       duration: DURATIONS.normal,
       useNativeDriver: true,
     }).start();
-  }, [photoAnim]);
+  }, [photoAnim, reduceMotion]);
 
   // v2.0.1: render from the full package object passed via navigation
   // params when present (list -> detail renders immediately, even
@@ -87,6 +129,16 @@ export function PackageDetailScreen({ route, navigation }: Props) {
   const pkg =
     route.params.package ??
     catalog.packages.find((p) => p.slug === route.params.slug);
+
+  // v2.0.3: similar-packages is the expensive computation on this
+  // screen — similarPackages() runs getPriceInfo() over the whole
+  // catalogue (~709 items) and sorts it. It used to run on EVERY
+  // first render, blocking first paint. Now it runs only in the
+  // deferred pass, after title/price/actions have painted.
+  const similar = useMemo(() => {
+    if (!deferredReady || !pkg) return [];
+    return similarPackages(catalog.packages, pkg);
+  }, [deferredReady, catalog.packages, pkg]);
 
   // v2 items 84/88: record the displayed price + the view itself so
   // price history and recently-viewed cover detail views too (not
@@ -137,7 +189,6 @@ export function PackageDetailScreen({ route, navigation }: Props) {
 
   const price = getPriceInfo(pkg);
   const stops = routeStops(pkg.route);
-  const similar = similarPackages(catalog.packages, pkg);
   const photoOpacity = photoAnim;
   const photoScale = photoAnim.interpolate({
     inputRange: [0, 1],
@@ -179,121 +230,10 @@ export function PackageDetailScreen({ route, navigation }: Props) {
             on enquiry.
           </Text>
 
-          <Text style={styles.sectionHeading}>Price breakdown</Text>
-          {price.hasPrice ? (
-            <View>
-              <Text style={styles.sectionText}>
-                Listed price: {price.display}
-              </Text>
-              {price.crossed !== '' ? (
-                <Text style={styles.sectionText}>
-                  Listed MRP: {price.crossed}
-                </Text>
-              ) : null}
-              {price.save !== '' ? (
-                <Text style={styles.sectionText}>
-                  You save (as listed): {price.save}
-                </Text>
-              ) : null}
-            </View>
-          ) : (
-            <Text style={styles.sectionText}>Pricing on request.</Text>
-          )}
-          <Text style={styles.sectionText}>
-            Taxes and inclusions are not published for this package — they
-            are confirmed by the team on callback. Whether the listed price
-            is per person or for the whole trip is not stated in the price
-            data, so it is shown only as listed; the final quote is
-            confirmed on enquiry.
-          </Text>
-
-          {stops.length > 0 ? (
-            <View>
-              <Text style={styles.sectionHeading}>Route stops</Text>
-              <Text style={styles.note}>
-                These are route stops from the package route — not a
-                day-wise itinerary. Day-by-day details, meals and stays are
-                not published for this package and are confirmed by the
-                team on callback.
-              </Text>
-              {stops.map((stop, i) => (
-                <View key={`${stop}-${i}`} style={styles.stopRow}>
-                  <Text style={styles.stopNumber}>{i + 1}</Text>
-                  <Text style={styles.stopText}>{stop}</Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
-
-          {pkg.description !== '' ? (
-            <>
-              <Text style={styles.sectionHeading}>About this trip</Text>
-              <Text style={styles.sectionText}>{pkg.description}</Text>
-            </>
-          ) : null}
-
-          <Text style={styles.sectionHeading}>Departure dates & availability</Text>
-          <Text style={styles.sectionText}>
-            Departure dates and seat availability are confirmed by the team
-            on callback. A live availability calendar is not available yet
-            — no dates or seat counts are published for this package.
-          </Text>
-
-          <Text style={styles.sectionHeading}>What is included</Text>
-          <Text style={styles.sectionText}>
-            Inclusions, exclusions, hotel, cab, meals and permits are
-            confirmed per package by the team — they are not published in
-            structured form for this package, so no checklist is guessed
-            here. You can ask for specific inclusions as requests in the
-            booking request flow.
-          </Text>
-
-          <Text style={styles.sectionHeading}>Hotels</Text>
-          <Text style={styles.sectionText}>
-            Hotel names are shared on booking confirmation. No hotel names,
-            ratings or photos are listed here because none are confirmed
-            for this package.
-          </Text>
-
-          <Text style={styles.sectionHeading}>Traveller reviews</Text>
-          <Text style={styles.sectionText}>
-            Traveller reviews for this package are not available in the app
-            yet. No reviews are shown because there is no verified review
-            source for this package.
-          </Text>
-
-          {similar.length > 0 ? (
-            <View>
-              <Text style={styles.sectionHeading}>Similar packages</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={styles.similarRow}>
-                  {similar.map((s) => {
-                    const sp = getPriceInfo(s);
-                    return (
-                      <Pressable
-                        key={s.slug}
-                        style={styles.similarCard}
-                        onPress={() =>
-                          navigation.push('PackageDetail', {
-                            slug: s.slug,
-                            package: s,
-                          })
-                        }>
-                        <Text style={styles.similarTitle} numberOfLines={2}>
-                          {s.title}
-                        </Text>
-                        <Text style={styles.similarMeta}>{s.category}</Text>
-                        <Text style={styles.similarPrice}>
-                          {sp.hasPrice ? sp.display : 'Price on enquiry'}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              </ScrollView>
-            </View>
-          ) : null}
-
+          {/* v2.0.3: actions paint in the FIRST pass, directly under
+              price — moved up from below the similar-packages list.
+              Destinations and handlers are unchanged; only the
+              position in this file moved. */}
           <View style={styles.actions}>
             <Pressable
               style={[styles.button, styles.primaryButton]}
@@ -417,32 +357,151 @@ export function PackageDetailScreen({ route, navigation }: Props) {
               {catalog.error !== null ? ' — live refresh failed, showing saved data.' : ''}
             </Text>
           </View>
-          <View style={styles.noteSection}>
-            <Text style={[styles.noteLabel, { color: colors.text }]}>
-              My note
-            </Text>
-            <TextInput
-              style={[styles.noteInput, { color: colors.text, borderColor: colors.border }]}
-              value={note}
-              onChangeText={(value) => {
-                setNote(value);
-                setNoteSaved(false);
-              }}
-              placeholder="e.g. ask Amit about the hotel"
-              placeholderTextColor={colors.muted}
-              multiline
-            />
-            <Pressable
-              style={[styles.button, styles.secondaryButton]}
-              onPress={() => {
-                void setPackageNote(pkg.slug, note).then(() => setNoteSaved(true));
-              }}>
-              <Text style={styles.secondaryButtonText}>Save note</Text>
-            </Pressable>
-            {noteSaved ? (
-              <Text style={styles.note}>Note saved on this device.</Text>
-            ) : null}
-          </View>
+
+          {deferredReady ? (
+            <>
+                        <Text style={styles.sectionHeading}>Price breakdown</Text>
+                        {price.hasPrice ? (
+                          <View>
+                            <Text style={styles.sectionText}>
+                              Listed price: {price.display}
+                            </Text>
+                            {price.crossed !== '' ? (
+                              <Text style={styles.sectionText}>
+                                Listed MRP: {price.crossed}
+                              </Text>
+                            ) : null}
+                            {price.save !== '' ? (
+                              <Text style={styles.sectionText}>
+                                You save (as listed): {price.save}
+                              </Text>
+                            ) : null}
+                          </View>
+                        ) : (
+                          <Text style={styles.sectionText}>Pricing on request.</Text>
+                        )}
+                        <Text style={styles.sectionText}>
+                          Taxes and inclusions are not published for this package — they
+                          are confirmed by the team on callback. Whether the listed price
+                          is per person or for the whole trip is not stated in the price
+                          data, so it is shown only as listed; the final quote is
+                          confirmed on enquiry.
+                        </Text>
+
+                        {stops.length > 0 ? (
+                          <View>
+                            <Text style={styles.sectionHeading}>Route stops</Text>
+                            <Text style={styles.note}>
+                              These are route stops from the package route — not a
+                              day-wise itinerary. Day-by-day details, meals and stays are
+                              not published for this package and are confirmed by the
+                              team on callback.
+                            </Text>
+                            {stops.map((stop, i) => (
+                              <View key={`${stop}-${i}`} style={styles.stopRow}>
+                                <Text style={styles.stopNumber}>{i + 1}</Text>
+                                <Text style={styles.stopText}>{stop}</Text>
+                              </View>
+                            ))}
+                          </View>
+                        ) : null}
+
+                        {pkg.description !== '' ? (
+                          <>
+                            <Text style={styles.sectionHeading}>About this trip</Text>
+                            <Text style={styles.sectionText}>{pkg.description}</Text>
+                          </>
+                        ) : null}
+
+                        <Text style={styles.sectionHeading}>Departure dates & availability</Text>
+                        <Text style={styles.sectionText}>
+                          Departure dates and seat availability are confirmed by the team
+                          on callback. A live availability calendar is not available yet
+                          — no dates or seat counts are published for this package.
+                        </Text>
+
+                        <Text style={styles.sectionHeading}>What is included</Text>
+                        <Text style={styles.sectionText}>
+                          Inclusions, exclusions, hotel, cab, meals and permits are
+                          confirmed per package by the team — they are not published in
+                          structured form for this package, so no checklist is guessed
+                          here. You can ask for specific inclusions as requests in the
+                          booking request flow.
+                        </Text>
+
+                        <Text style={styles.sectionHeading}>Hotels</Text>
+                        <Text style={styles.sectionText}>
+                          Hotel names are shared on booking confirmation. No hotel names,
+                          ratings or photos are listed here because none are confirmed
+                          for this package.
+                        </Text>
+
+                        <Text style={styles.sectionHeading}>Traveller reviews</Text>
+                        <Text style={styles.sectionText}>
+                          Traveller reviews for this package are not available in the app
+                          yet. No reviews are shown because there is no verified review
+                          source for this package.
+                        </Text>
+
+                        {similar.length > 0 ? (
+                          <View>
+                            <Text style={styles.sectionHeading}>Similar packages</Text>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                              <View style={styles.similarRow}>
+                                {similar.map((s) => {
+                                  const sp = getPriceInfo(s);
+                                  return (
+                                    <Pressable
+                                      key={s.slug}
+                                      style={styles.similarCard}
+                                      onPress={() =>
+                                        navigation.push('PackageDetail', {
+                                          slug: s.slug,
+                                          package: s,
+                                        })
+                                      }>
+                                      <Text style={styles.similarTitle} numberOfLines={2}>
+                                        {s.title}
+                                      </Text>
+                                      <Text style={styles.similarMeta}>{s.category}</Text>
+                                      <Text style={styles.similarPrice}>
+                                        {sp.hasPrice ? sp.display : 'Price on enquiry'}
+                                      </Text>
+                                    </Pressable>
+                                  );
+                                })}
+                              </View>
+                            </ScrollView>
+                          </View>
+                        ) : null}
+                        <View style={styles.noteSection}>
+                          <Text style={[styles.noteLabel, { color: colors.text }]}>
+                            My note
+                          </Text>
+                          <TextInput
+                            style={[styles.noteInput, { color: colors.text, borderColor: colors.border }]}
+                            value={note}
+                            onChangeText={(value) => {
+                              setNote(value);
+                              setNoteSaved(false);
+                            }}
+                            placeholder="e.g. ask Amit about the hotel"
+                            placeholderTextColor={colors.muted}
+                            multiline
+                          />
+                          <Pressable
+                            style={[styles.button, styles.secondaryButton]}
+                            onPress={() => {
+                              void setPackageNote(pkg.slug, note).then(() => setNoteSaved(true));
+                            }}>
+                            <Text style={styles.secondaryButtonText}>Save note</Text>
+                          </Pressable>
+                          {noteSaved ? (
+                            <Text style={styles.note}>Note saved on this device.</Text>
+                          ) : null}
+                        </View>
+            </>
+          ) : null}
         </View>
       </ScrollView>
     </SafeAreaView>
