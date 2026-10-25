@@ -1,0 +1,55 @@
+# EAS Update publisher (v2.0.3) — ships JS-only fixes over the air to
+# the installed app, so v2.0.2 phones get fixes without a store build.
+#
+# READ BEFORE TOUCHING THIS FILE:
+#   (1) SECRET SETUP (repo owner only): the repo secret EXPO_TOKEN must
+#       be added by the repo owner from Expo's tokens page (Expo
+#       dashboard -> Access Tokens). Agents never handle, paste, or
+#       print the value — this workflow only references it as
+#       ${{ secrets.EXPO_TOKEN }}. No secret value appears anywhere in
+#       this repo, this file, or any PR body.
+#   (2) EXPECTED FAILURE: this workflow FAILS until that secret exists
+#       (EAS auth cannot succeed without it). That is expected, not a
+#       bug — do not "fix" it by embedding a token or weakening auth.
+#   (3) DO NOT BUMP VERSIONS IN FIX PUSHES: app.json keeps
+#       runtimeVersion policy appVersion, so the runtime is pinned to
+#       the app version (2.0.2) and android.versionCode stays 3. OTA
+#       updates only reach builds whose runtime matches, so v2.0.2
+#       phones receive ONLY updates published under runtime 2.0.2. A
+#       version bump in a fix push would start a new runtime line and
+#       strand every phone already on 2.0.2. Bumps belong to a real
+#       binary release, decided separately.
+#   (4) CHANNEL: preview, matching eas.json (the preview build profile
+#       is the channel these phones were built on). Do not retarget
+#       this workflow to production without also rebuilding the app
+#       against that channel — otherwise nothing receives the update.
+#
+# Trigger: every push to main (paths are irrelevant — a fix anywhere
+# in the repo ships as one update bundle).
+
+name: eas-update
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  publish:
+    name: Publish OTA update (preview channel)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
+      - name: Publish update
+        run: eas update --channel preview --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
