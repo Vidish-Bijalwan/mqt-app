@@ -62,6 +62,7 @@ import {
   shouldShowWhatsNew,
 } from './src/lib/whatsNew';
 import { markAppReady } from './src/lib/diagnostics';
+import { useUpdateChecker } from './src/lib/appUpdates';
 import {
   flushEnquiryQueue,
   registerForegroundFlush,
@@ -146,6 +147,46 @@ function MarkReady() {
 }
 
 /**
+ * v2.0.3 silent launch auto-check (expo-updates). Runs once when the
+ * main app mounts: silent when up to date AND silent on error (an
+ * update failure must never block or nag on launch). Only when a
+ * download is READY does this render — a non-blocking banner above
+ * the navigator with "Restart now" (the app's only reloadAsync call
+ * site, behind that explicit tap) and "Later" (dismisses for the
+ * session; the check already ran once, so it does not re-prompt).
+ * Never force-restarts, never reloads in the background.
+ */
+function UpdatePrompt() {
+  const { colors } = useSettings();
+  const { status, checkForUpdates, dismissReady, restartNow } =
+    useUpdateChecker();
+  useEffect(() => {
+    void checkForUpdates();
+  }, [checkForUpdates]);
+  if (status !== 'ready') return null;
+  return (
+    <View
+      style={[styles.updateBanner, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+      <Text style={[styles.updateBannerText, { color: colors.text }]}>
+        An app update is ready — restart to apply it.
+      </Text>
+      <View style={styles.updateBannerRow}>
+        <Pressable
+          style={[styles.nudgeButton, styles.nudgePrimary]}
+          onPress={() => void restartNow()}>
+          <Text style={styles.nudgeButtonText}>Restart now</Text>
+        </Pressable>
+        <Pressable style={styles.nudgeButton} onPress={dismissReady}>
+          <Text style={[styles.nudgeButtonText, { color: colors.primary }]}>
+            Later
+          </Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+/**
  * Launch gate (v1.2), inside the NavigationContainer so the gate screens
  * can use navigation-adjacent helpers. Order: maintenance first, then a
  * forced update, then What's New (post-update interstitial, never on
@@ -221,6 +262,7 @@ function LaunchGate({ reduceMotion }: { reduceMotion: boolean }) {
   return (
     <View style={styles.gateWrap}>
       <MarkReady />
+      <UpdatePrompt />
       {showSoftNudge ? (
         <View style={[styles.nudge, { backgroundColor: colors.estimatedBg }]}>
           <Text style={[styles.nudgeText, { color: colors.text }]}>
@@ -514,4 +556,11 @@ const styles = StyleSheet.create({
   },
   nudgePrimary: { backgroundColor: '#127C82', borderColor: '#127C82' },
   nudgeButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+  updateBanner: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  updateBannerText: { fontSize: 14, lineHeight: 20 },
+  updateBannerRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
 });
