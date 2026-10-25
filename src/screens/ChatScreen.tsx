@@ -1,6 +1,6 @@
 /**
  * Chat tab (v1.2). HONEST MESSAGING — READ BEFORE EDITING:
- * There is no two-way inbox and no live chat in this app: no team inbox
+ * This form is not a live chat and there is no two-way inbox: instant chat now exists via MQT Support — no team inbox
  * UI exists, so no fake replies, typing indicators, or canned answers
  * presented as live chat are ever rendered here. A message sent here is
  * submitted as an enquiry via submitEnquiry (prefixed 'App chat' with
