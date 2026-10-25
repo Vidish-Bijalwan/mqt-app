@@ -89,9 +89,15 @@ export function PackageList({
   React.useEffect(() => {
     dataSaverRef.current = settings.dataSaver;
   }, [settings.dataSaver]);
-  const prefetchVisible = React.useCallback((items: { item: Package }[]) => {
+  // Shared URL builder for every prefetch path: the EXACT optimizer
+  // URL the detail screen will request for that card (PackageImage:
+  // w=750, or w=640 in low-data mode), so a tap hits the expo-image
+  // disk cache instead of a slow download. Deduped by URL and
+  // fire-and-forget: a prefetch failure is silently ignored (the
+  // detail's own image pipeline still loads the photo).
+  const prefetchPackages = React.useCallback((items: Package[]) => {
     const urls: string[] = [];
-    for (const { item } of items) {
+    for (const item of items) {
       const raw = packageImageUrl(item);
       const detailUrl =
         raw !== null
@@ -108,6 +114,9 @@ export function PackageList({
       void ExpoImage.prefetch(urls, 'memory-disk').catch(() => undefined);
     }
   }, []);
+  const prefetchVisible = React.useCallback((items: { item: Package }[]) => {
+    prefetchPackages(items.map(({ item }) => item));
+  }, [prefetchPackages]);
   const handleViewableItemsChanged = React.useCallback(
     ({ viewableItems }: { viewableItems: { item: Package }[] }) => {
       prefetchVisible(viewableItems);
@@ -141,6 +150,19 @@ export function PackageList({
         <FadeInView index={index}>
           <PackageCard
             pkg={item}
+            // v2.0.3: widen prefetch from "viewable only" to the
+            // rendered window + neighbours. FlatList mounts cards for
+            // the rendered window (initialNumToRender / windowSize),
+            // which is wider than the 50%-visible viewability set, so
+            // each card prefetches itself + its immediate neighbours
+            // on mount (deduped by URL in prefetchPackages, so a
+            // re-render never re-downloads).
+            neighbors={[
+              packages[index - 1],
+              item,
+              packages[index + 1],
+            ].filter((p): p is Package => p !== undefined)}
+            prefetchPackages={prefetchPackages}
             onPress={() => onPressPackage(item)}
             onLongPress={() =>
               showCardActions(item, onEnquirePackage, {
@@ -213,15 +235,27 @@ function showCardActions(
 
 function PackageCard({
   pkg,
+  neighbors,
+  prefetchPackages,
   onPress,
   onLongPress,
 }: {
   pkg: Package;
+  neighbors: Package[];
+  prefetchPackages: (items: Package[]) => void;
   onPress: () => void;
   onLongPress: () => void;
 }) {
   const { colors, fs } = useSettings();
   const price = getPriceInfo(pkg);
+  // v2.0.3 rendered-window prefetch (see renderItem): runs once per
+  // card mount. Neighbours are deliberately NOT in the dep list — the
+  // list order does not change under a mounted card, and the URL
+  // dedup in prefetchPackages makes any re-run a no-op anyway.
+  React.useEffect(() => {
+    prefetchPackages(neighbors);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pkg.slug]);
   return (
     <PressScale
       onPress={onPress}
