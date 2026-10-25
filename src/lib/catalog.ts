@@ -22,6 +22,7 @@ import {
 } from 'react';
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Image as ExpoImage } from 'expo-image';
 import { ApiError, SITE_BASE } from './api';
 import { packages as bundledPackages } from '../data/packages';
 import type { Package } from '../data/packages';
@@ -281,6 +282,24 @@ export async function fetchCatalogSingle(): Promise<CatalogResult> {
   return result;
 }
 
+/**
+ * Clear expo-image's disk + memory caches (SDK 58: clearDiskCache() /
+ * clearMemoryCache()). Best-effort by design — see the refresh()
+ * comment for why this runs only on explicit Refresh, never per load.
+ */
+export async function clearImageCaches(): Promise<void> {
+  try {
+    await ExpoImage.clearMemoryCache();
+  } catch {
+    // Best-effort only; the catalogue refetch still proceeds.
+  }
+  try {
+    await ExpoImage.clearDiskCache();
+  } catch {
+    // Best-effort only; the catalogue refetch still proceeds.
+  }
+}
+
 /* --------------------------- shared provider ---------------------------- */
 
 /**
@@ -466,15 +485,34 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(() => {
     if (mountedRef.current) setLoading(true);
-    void runCatalogLoad({
-      fetchFn: fetchCatalog,
-      setPackages,
-      setSource,
-      setUpdatedAt,
-      setError,
-      setLoading,
-      mountedRef,
-    });
+    // v2.0.2 working refresh: Refresh must also clear the expo-image
+    // disk + memory caches (SDK 58 API, verified against the versioned
+    // docs and the installed expo-image types: Image.clearDiskCache()
+    // and Image.clearMemoryCache() — note: no Async suffix in SDK 58).
+    // Best-effort: on web both resolve false, and a failure must never
+    // break the catalogue refetch itself.
+    //
+    // RENAME POLICY (do not "fix" this with cache-busting params):
+    // same-URL image swaps are handled by renaming the image file on
+    // the site (e.g. the Jyotirlinga photo moved to a new -somnath
+    // path), NOT by cache expiry. No cache-busting query params are
+    // added to image loads anywhere: they would force every photo to
+    // re-download on every load, which is exactly what breaks the app
+    // on slow connections. Refresh is the one explicit moment the user
+    // asks for fresh data, so it is the one moment caches are cleared.
+    void (async () => {
+      await clearImageCaches();
+      if (!mountedRef.current) return;
+      await runCatalogLoad({
+        fetchFn: fetchCatalog,
+        setPackages,
+        setSource,
+        setUpdatedAt,
+        setError,
+        setLoading,
+        mountedRef,
+      });
+    })();
   }, []);
 
   const catalogValue = useMemo<UseCatalogResult>(

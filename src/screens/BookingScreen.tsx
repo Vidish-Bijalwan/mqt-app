@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { COLORS, FONT, RADII, SPACING, TOUCH_MIN, WEIGHT } from '../theme/tokens';
+import { FONT, RADII, SPACING, TOUCH_MIN, WEIGHT } from '../theme/tokens';
+import type { Palette } from '../theme/tokens';
 import {
   ApiError,
   isValidEmail,
@@ -23,6 +24,7 @@ import { listTravelers, loadProfile } from '../lib/settings';
 import type { Traveler } from '../lib/settings';
 import { saveTrip } from '../lib/trips';
 import { useCatalog } from '../lib/catalog';
+import { useSettings } from '../context/SettingsContext';
 import { getPriceInfo } from '../lib/price';
 import type { RootStackParamList } from '../navigation/types';
 import {
@@ -58,6 +60,8 @@ const STEP_LABELS = [
  */
 export function BookingScreen({ route, navigation }: Props) {
   const { slug, packageName } = route.params;
+  const { colors } = useSettings();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const catalog = useCatalog();
   const pkg = catalog.packages.find((p) => p.slug === slug);
   const price = pkg !== undefined ? getPriceInfo(pkg) : null;
@@ -307,7 +311,7 @@ export function BookingScreen({ route, navigation }: Props) {
   if (draft === null) {
     return (
       <SafeAreaView style={styles.container}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <ActivityIndicator size="large" color={colors.primary} />
       </SafeAreaView>
     );
   }
@@ -404,6 +408,7 @@ export function BookingScreen({ route, navigation }: Props) {
               value={draft.preferredDate}
               onChangeText={(v) => update({ preferredDate: v })}
               placeholder="YYYY-MM-DD"
+              placeholderTextColor={colors.placeholderText}
               autoCapitalize="none"
             />
             <Text style={styles.label}>Alternate date (optional)</Text>
@@ -412,6 +417,7 @@ export function BookingScreen({ route, navigation }: Props) {
               value={draft.alternateDate}
               onChangeText={(v) => update({ alternateDate: v })}
               placeholder="YYYY-MM-DD"
+              placeholderTextColor={colors.placeholderText}
               autoCapitalize="none"
             />
             <Text style={styles.label}>Flexible month (optional)</Text>
@@ -420,6 +426,7 @@ export function BookingScreen({ route, navigation }: Props) {
               value={draft.flexibleMonth}
               onChangeText={(v) => update({ flexibleMonth: v })}
               placeholder="e.g. December 2026"
+              placeholderTextColor={colors.placeholderText}
             />
           </View>
         ) : null}
@@ -465,12 +472,14 @@ export function BookingScreen({ route, navigation }: Props) {
               value={manualName}
               onChangeText={setManualName}
               placeholder="Full name (required)"
+              placeholderTextColor={colors.placeholderText}
             />
             <TextInput
               style={styles.input}
               value={manualAge}
               onChangeText={setManualAge}
               placeholder="Age (optional)"
+              placeholderTextColor={colors.placeholderText}
               keyboardType="number-pad"
             />
             <View style={styles.row}>
@@ -641,6 +650,7 @@ export function BookingScreen({ route, navigation }: Props) {
                   value={draft.groupName}
                   onChangeText={(v) => update({ groupName: v })}
                   placeholder="e.g. Delhi Public School"
+                  placeholderTextColor={colors.placeholderText}
                 />
                 <Text style={styles.label}>Group size (10+)</Text>
                 <TextInput
@@ -648,6 +658,7 @@ export function BookingScreen({ route, navigation }: Props) {
                   value={draft.groupSize}
                   onChangeText={(v) => update({ groupSize: v })}
                   placeholder="e.g. 50"
+                  placeholderTextColor={colors.placeholderText}
                   keyboardType="number-pad"
                 />
               </View>
@@ -658,6 +669,7 @@ export function BookingScreen({ route, navigation }: Props) {
               value={draft.notes}
               onChangeText={(v) => update({ notes: v })}
               placeholder="Optional notes for the team"
+              placeholderTextColor={colors.placeholderText}
               multiline
             />
           </View>
@@ -675,6 +687,7 @@ export function BookingScreen({ route, navigation }: Props) {
               value={draft.contactName}
               onChangeText={(v) => update({ contactName: v })}
               placeholder="Full name"
+              placeholderTextColor={colors.placeholderText}
             />
             <Text style={styles.label}>Phone</Text>
             <TextInput
@@ -682,6 +695,7 @@ export function BookingScreen({ route, navigation }: Props) {
               value={draft.contactPhone}
               onChangeText={(v) => update({ contactPhone: v })}
               placeholder="Phone number"
+              placeholderTextColor={colors.placeholderText}
               keyboardType="phone-pad"
             />
             <Text style={styles.label}>Email (optional)</Text>
@@ -690,6 +704,7 @@ export function BookingScreen({ route, navigation }: Props) {
               value={draft.contactEmail}
               onChangeText={(v) => update({ contactEmail: v })}
               placeholder="Email address"
+              placeholderTextColor={colors.placeholderText}
               keyboardType="email-address"
               autoCapitalize="none"
             />
@@ -808,7 +823,7 @@ export function BookingScreen({ route, navigation }: Props) {
               onPress={() => void handleSubmit()}
               disabled={submitting}>
               {submitting ? (
-                <ActivityIndicator color={COLORS.white} />
+                <ActivityIndicator color={colors.white} />
               ) : (
                 <Text style={styles.primaryButtonText}>
                   Send booking request
@@ -829,29 +844,30 @@ export function BookingScreen({ route, navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+function makeStyles(c: Palette) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.background },
   body: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
   title: {
     fontSize: FONT.title,
     fontWeight: WEIGHT.bold,
-    color: COLORS.text,
+    color: c.text,
   },
   subtitle: {
     fontSize: FONT.body,
-    color: COLORS.muted,
+    color: c.muted,
     marginTop: SPACING.sm,
     lineHeight: 22,
   },
   successTitle: {
     fontSize: FONT.title,
     fontWeight: WEIGHT.bold,
-    color: COLORS.text,
+    color: c.text,
   },
-  text: { fontSize: FONT.body, color: COLORS.text, lineHeight: 22 },
+  text: { fontSize: FONT.body, color: c.text, lineHeight: 22 },
   note: {
     fontSize: FONT.meta,
-    color: COLORS.muted,
+    color: c.muted,
     marginTop: SPACING.sm,
     lineHeight: 18,
   },
@@ -859,50 +875,51 @@ const styles = StyleSheet.create({
     marginTop: SPACING.md,
     padding: SPACING.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: c.border,
     borderRadius: RADII.card,
   },
-  draftNoteText: { fontSize: FONT.body, color: COLORS.text, lineHeight: 20 },
+  draftNoteText: { fontSize: FONT.body, color: c.text, lineHeight: 20 },
   linkText: {
     fontSize: FONT.body,
     fontWeight: WEIGHT.bold,
-    color: COLORS.primary,
+    color: c.primary,
     marginTop: SPACING.sm,
   },
   progress: {
     fontSize: FONT.meta,
     fontWeight: WEIGHT.bold,
-    color: COLORS.text,
+    color: c.text,
     marginTop: SPACING.lg,
   },
   progressBar: {
     height: 6,
-    backgroundColor: COLORS.border,
+    backgroundColor: c.border,
     borderRadius: 3,
     marginTop: SPACING.sm,
     overflow: 'hidden',
   },
-  progressFill: { height: 6, backgroundColor: COLORS.primary },
+  progressFill: { height: 6, backgroundColor: c.primary },
   sectionHeading: {
     fontSize: FONT.heading,
     fontWeight: WEIGHT.bold,
-    color: COLORS.text,
+    color: c.text,
     marginTop: SPACING.lg,
   },
   label: {
     fontSize: FONT.body,
     fontWeight: WEIGHT.bold,
-    color: COLORS.text,
+    color: c.text,
     marginTop: SPACING.md,
   },
   input: {
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: c.border,
+    backgroundColor: c.inputBg,
     borderRadius: RADII.button,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.md,
     fontSize: FONT.body,
-    color: COLORS.text,
+    color: c.text,
     marginTop: SPACING.sm,
     minHeight: TOUCH_MIN,
   },
@@ -910,26 +927,26 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.sm, flexWrap: 'wrap', alignItems: 'center' },
   chip: {
     borderWidth: 1,
-    borderColor: COLORS.primary,
+    borderColor: c.primary,
     borderRadius: RADII.chip,
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm,
     minHeight: 40,
     justifyContent: 'center',
   },
-  chipSelected: { backgroundColor: COLORS.estimatedBg },
-  chipText: { fontSize: FONT.body, fontWeight: WEIGHT.bold, color: COLORS.primary },
+  chipSelected: { backgroundColor: c.estimatedBg },
+  chipText: { fontSize: FONT.body, fontWeight: WEIGHT.bold, color: c.primary },
   checkRow: {
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: c.border,
     borderRadius: RADII.button,
     padding: SPACING.md,
     marginTop: SPACING.sm,
     minHeight: TOUCH_MIN,
     justifyContent: 'center',
   },
-  checkRowSelected: { borderColor: COLORS.primary },
-  checkText: { fontSize: FONT.body, color: COLORS.text },
+  checkRowSelected: { borderColor: c.primary },
+  checkText: { fontSize: FONT.body, color: c.text },
   travelerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -947,27 +964,27 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderWidth: 1,
-    borderColor: COLORS.primary,
+    borderColor: c.primary,
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  counterButtonText: { fontSize: 20, color: COLORS.primary, fontWeight: WEIGHT.bold },
-  counterValue: { fontSize: FONT.body, fontWeight: WEIGHT.bold, color: COLORS.text, minWidth: 32, textAlign: 'center' },
+  counterButtonText: { fontSize: 20, color: c.primary, fontWeight: WEIGHT.bold },
+  counterValue: { fontSize: FONT.body, fontWeight: WEIGHT.bold, color: c.text, minWidth: 32, textAlign: 'center' },
   reviewLine: {
     fontSize: FONT.body,
-    color: COLORS.text,
+    color: c.text,
     lineHeight: 22,
     marginTop: SPACING.sm,
   },
   important: { fontWeight: WEIGHT.bold },
   errorBox: {
-    backgroundColor: COLORS.errorBg,
+    backgroundColor: c.errorBg,
     borderRadius: RADII.button,
     padding: SPACING.md,
     marginTop: SPACING.md,
   },
-  errorText: { fontSize: FONT.body, color: COLORS.errorText, lineHeight: 20 },
+  errorText: { fontSize: FONT.body, color: c.errorText, lineHeight: 20 },
   navRow: { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.xl },
   navButton: { flex: 1 },
   button: {
@@ -978,9 +995,10 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
     marginTop: SPACING.md,
   },
-  smallPrimary: { backgroundColor: COLORS.primary, paddingHorizontal: SPACING.lg },
-  primaryButton: { backgroundColor: COLORS.primary },
-  primaryButtonText: { color: COLORS.white, fontSize: FONT.body, fontWeight: WEIGHT.bold },
-  secondaryButton: { borderWidth: 1, borderColor: COLORS.primary },
-  secondaryButtonText: { color: COLORS.primary, fontSize: FONT.body, fontWeight: WEIGHT.bold },
-});
+  smallPrimary: { backgroundColor: c.primary, paddingHorizontal: SPACING.lg },
+  primaryButton: { backgroundColor: c.primary },
+  primaryButtonText: { color: c.white, fontSize: FONT.body, fontWeight: WEIGHT.bold },
+  secondaryButton: { borderWidth: 1, borderColor: c.primary },
+  secondaryButtonText: { color: c.primary, fontSize: FONT.body, fontWeight: WEIGHT.bold },
+  });
+}

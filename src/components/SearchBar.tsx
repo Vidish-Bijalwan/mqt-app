@@ -4,9 +4,11 @@
  * DEFERRED (see src/lib/search.ts header) and a mic icon that does
  * nothing — or pretends to listen — would be a fake feature.
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { COLORS, FONT, RADII, SPACING, TOUCH_MIN } from '../theme/tokens';
+import { FONT, RADII, SPACING, TOUCH_MIN } from '../theme/tokens';
+import type { Palette } from '../theme/tokens';
+import { useSettings } from '../context/SettingsContext';
 
 interface Props {
   value: string;
@@ -21,6 +23,8 @@ export function SearchBar({
   onSubmit,
   placeholder = 'Search packages or destinations…',
 }: Props) {
+  const { colors } = useSettings();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.wrap}>
       <TextInput
@@ -30,7 +34,7 @@ export function SearchBar({
         onSubmitEditing={onSubmit}
         returnKeyType="search"
         placeholder={placeholder}
-        placeholderTextColor={COLORS.muted}
+        placeholderTextColor={colors.muted}
         accessibilityLabel="Search packages"
       />
       {value !== '' ? (
@@ -45,12 +49,13 @@ export function SearchBar({
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(c: Palette) {
+  return StyleSheet.create({
   wrap: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: c.border,
     borderRadius: RADII.button,
     paddingLeft: SPACING.lg,
   },
@@ -58,7 +63,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: TOUCH_MIN,
     fontSize: FONT.body,
-    color: COLORS.text,
+    color: c.text,
   },
   clearButton: {
     minWidth: TOUCH_MIN,
@@ -68,6 +73,7 @@ const styles = StyleSheet.create({
   },
   clearText: {
     fontSize: FONT.body,
-    color: COLORS.muted,
+    color: c.muted,
   },
-});
+  });
+}

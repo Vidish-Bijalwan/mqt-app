@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AccessibilityInfo, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as SplashScreen from 'expo-splash-screen';
 import * as Font from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -20,6 +21,7 @@ import { PayScreen } from './src/screens/PayScreen';
 import { BlogScreen } from './src/screens/BlogScreen';
 import { BlogArticleScreen } from './src/screens/BlogArticleScreen';
 import { TravelersScreen } from './src/screens/TravelersScreen';
+import { SupportChatScreen } from './src/screens/SupportChatScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { DataPrivacyScreen } from './src/screens/DataPrivacyScreen';
 import { MaintenanceScreen } from './src/screens/MaintenanceScreen';
@@ -67,6 +69,22 @@ import {
 import { submitEnquiry } from './src/lib/api';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+/**
+ * Controlled launch screen (v2.0.2, SDK 58 expo-splash-screen, verified
+ * against the versioned docs). preventAutoHideAsync() MUST run at
+ * module scope — the docs warn that calling it inside a component or
+ * hook can run too late, after the splash already hid. The native
+ * splash itself is the existing app.json config: the white MQT INDIA
+ * lockup (assets/splash-icon-v2.png) on teal (#127C82); the launcher
+ * icon (assets/icon.png) is untouched. hideAsync() runs from App()
+ * once the first render is ready, after a short minimum display
+ * (600ms from module load) so the lockup is actually seen rather than
+ * flashing past. Fade-out is configured per reduced-motion in App().
+ */
+const APP_START_MS = Date.now();
+const MIN_SPLASH_MS = 600;
+void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 type AppNavigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -250,6 +268,11 @@ function LaunchGate({ reduceMotion }: { reduceMotion: boolean }) {
           options={{ title: 'Package details' }}
         />
         <Stack.Screen
+          name="SupportChat"
+          component={SupportChatScreen}
+          options={{ title: 'MQT Support' }}
+        />
+        <Stack.Screen
           name="Enquiry"
           component={EnquiryScreen}
           options={{ title: 'Enquire' }}
@@ -408,6 +431,26 @@ export default function App() {
     );
     return () => sub.remove();
   }, []);
+
+  // v2.0.2 launch screen: fade out only when motion is allowed, and
+  // only after the first render is ready + the minimum display. The
+  // timeout is a one-shot hide, not a gate on any network fetch: the
+  // catalogue loads in the background after first paint, so a slow
+  // connection can never trap the user on the splash screen.
+  useEffect(() => {
+    SplashScreen.setOptions({
+      duration: reduceMotion ? 0 : 300,
+      fade: !reduceMotion,
+    });
+    const remaining = MIN_SPLASH_MS - (Date.now() - APP_START_MS);
+    const timer = setTimeout(
+      () => {
+        void SplashScreen.hideAsync().catch(() => undefined);
+      },
+      Math.max(0, remaining),
+    );
+    return () => clearTimeout(timer);
+  }, [reduceMotion]);
 
   // v1.3 notifications: listeners + badge sync + tapped-notification
   // deep links (real routes only). Permission is never auto-prompted

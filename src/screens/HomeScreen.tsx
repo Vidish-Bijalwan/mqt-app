@@ -8,7 +8,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { COLORS, FONT, RADII, SPACING, TOUCH_MIN, WEIGHT } from '../theme/tokens';
+import { FONT, RADII, SPACING, TOUCH_MIN, WEIGHT } from '../theme/tokens';
+import type { Palette } from '../theme/tokens';
 import { useCatalog } from '../lib/catalog';
 import { useAppConfig } from '../lib/appConfig';
 import { getHomeCardDensity } from '../lib/experiments';
@@ -40,6 +41,7 @@ function matchesQuery(pkg: Package, query: string): boolean {
 export function HomeScreen({ navigation }: Props) {
   const catalog = useCatalog();
   const { colors } = useSettings();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   // ---- BEGIN v2 item 208 (A/B: home card density) — owned block ----
   // Variant comes from remote-config flags via experiments.ts; missing
   // flags resolve offline to the safe default ('comfortable'). Both
@@ -154,6 +156,47 @@ export function HomeScreen({ navigation }: Props) {
         </Pressable>
       ) : null}
 
+      {/*
+       * v2.0.2 instant-chat entry card: prominent teal card, but it
+       * sits above the list and never blocks it. Tapping the card
+       * opens the new SupportChat screen empty; tapping a prompt chip
+       * opens it with that question already sent (the tap itself is
+       * the user's send action). "Talk to Amit" opens the chat with a
+       * handoff request — the chat screen forwards it to Amit via
+       * WhatsApp / enquiry, it does not pretend Amit is typing.
+       */}
+      <View style={styles.chatCard}>
+        <Pressable
+          onPress={() => navigation.navigate('SupportChat', undefined)}
+          accessibilityLabel="Open instant support chat">
+          <Text style={styles.chatCardTitle}>
+            💬 MQT Support — instant answers
+          </Text>
+          <Text style={styles.chatCardSub}>
+            From Amit&apos;s team at My Quick Trippers — tap a question to
+            start chatting:
+          </Text>
+        </Pressable>
+        <View style={styles.chatPrompts}>
+          {[
+            { label: 'Goa packages', send: 'Show me Goa packages' },
+            { label: 'Kerala price', send: 'What is the price of Kerala packages?' },
+            { label: 'How to book', send: 'How do I book a package?' },
+            { label: 'Talk to Amit', send: "I'd like to talk to Amit, please." },
+          ].map((prompt) => (
+            <Pressable
+              key={prompt.label}
+              style={styles.chatPrompt}
+              onPress={() =>
+                navigation.navigate('SupportChat', {
+                  initialMessage: prompt.send,
+                })
+              }>
+              <Text style={styles.chatPromptText}>{prompt.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
       <View
         style={[
           styles.listWrap,
@@ -188,10 +231,11 @@ export function HomeScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(c: Palette) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: c.background,
   },
   header: {
     flexDirection: 'row',
@@ -199,14 +243,14 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
-    backgroundColor: COLORS.primary,
+    backgroundColor: c.primary,
   },
   brandName: {
     flex: 1,
     flexShrink: 1,
     fontSize: 18,
     fontWeight: WEIGHT.bold,
-    color: COLORS.white,
+    color: c.white,
   },
   blogButton: {
     marginLeft: 'auto',
@@ -218,7 +262,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   blogButtonText: {
-    color: COLORS.white,
+    color: c.white,
     fontWeight: WEIGHT.medium,
     fontSize: 14,
   },
@@ -232,11 +276,11 @@ const styles = StyleSheet.create({
   search: {
     height: TOUCH_MIN,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: c.border,
     borderRadius: RADII.button,
     paddingHorizontal: 14,
     fontSize: FONT.body,
-    color: COLORS.text,
+    color: c.text,
   },
   filterRow: {
     flexDirection: 'row',
@@ -252,12 +296,12 @@ const styles = StyleSheet.create({
     minHeight: TOUCH_MIN,
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: COLORS.primary,
+    borderColor: c.primary,
     borderRadius: RADII.button,
     paddingHorizontal: SPACING.lg,
   },
   filtersButtonText: {
-    color: COLORS.primary,
+    color: c.primary,
     fontSize: FONT.body,
     fontWeight: WEIGHT.bold,
   },
@@ -265,15 +309,53 @@ const styles = StyleSheet.create({
     flex: 1,
     flexShrink: 1,
     fontSize: FONT.meta,
-    color: COLORS.muted,
+    color: c.muted,
     textAlign: 'right',
   },
   errorRow: {
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm,
-    backgroundColor: COLORS.errorBg,
+    backgroundColor: c.errorBg,
   },
-  errorText: { fontSize: FONT.meta, color: COLORS.errorText },
+  chatCard: {
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.md,
+    padding: SPACING.md,
+    borderRadius: RADII.card,
+    backgroundColor: c.primary,
+  },
+  chatCardTitle: {
+    color: c.white,
+    fontSize: FONT.heading,
+    fontWeight: WEIGHT.bold,
+  },
+  chatCardSub: {
+    color: c.white,
+    fontSize: FONT.meta,
+    marginTop: SPACING.xs,
+    lineHeight: 18,
+    opacity: 0.9,
+  },
+  chatPrompts: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+    marginTop: SPACING.sm,
+  },
+  chatPrompt: {
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.6)',
+    borderRadius: RADII.chip,
+    paddingHorizontal: SPACING.md,
+    minHeight: 40,
+    justifyContent: 'center',
+  },
+  chatPromptText: {
+    color: c.white,
+    fontSize: FONT.meta,
+    fontWeight: WEIGHT.bold,
+  },
+  errorText: { fontSize: FONT.meta, color: c.errorText },
   listWrap: {
     flex: 1,
   },
@@ -281,4 +363,5 @@ const styles = StyleSheet.create({
   // (another builder's file); these wrap styles are Home-level only.
   listWrapCompact: { paddingTop: 0 },
   listWrapComfortable: { paddingTop: SPACING.sm },
-});
+  });
+}

@@ -70,6 +70,12 @@ export type RootStackParamList = {
   DataPrivacy: undefined;
   /** Shown after a successful payment. */
   PaySuccess: { orderId?: string; paymentId?: string };
+  /**
+   * Instant support chat (v2.0.2). Separate from the Chat tab composer:
+   * replies come from POST {SITE_BASE}/api/chat. initialMessage is set
+   * only by a Home prompt-chip tap (the user's own tap) and is sent once.
+   */
+  SupportChat: { initialMessage?: string } | undefined;
   /** Booking REQUEST flow (v1.3, items 41–50) — an enquiry through the
    *  existing lead channel, never a confirmed booking. */
   Booking: { slug: string; packageName: string };

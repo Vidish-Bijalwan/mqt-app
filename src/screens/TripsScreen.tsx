@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -17,7 +17,9 @@ import type { SavedTrip } from '../lib/trips';
 import { listPlannerTrips, TRIP_TYPE_LABELS } from '../lib/planner';
 import type { PlannedTrip } from '../lib/planner';
 import { recordViewed } from '../lib/recentHistory';
-import { COLORS, FONT, RADII, SPACING, TOUCH_MIN, WEIGHT } from '../theme/tokens';
+import { FONT, RADII, SPACING, TOUCH_MIN, WEIGHT } from '../theme/tokens';
+import type { Palette } from '../theme/tokens';
+import { useSettings } from '../context/SettingsContext';
 import type { RootStackParamList, TabParamList } from '../navigation/types';
 
 type Nav = CompositeNavigationProp<
@@ -33,6 +35,8 @@ type Nav = CompositeNavigationProp<
  */
 export function TripsScreen() {
   const navigation = useNavigation<Nav>();
+  const { colors } = useSettings();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [trips, setTrips] = useState<SavedTrip[]>([]);
   const [plannerTrips, setPlannerTrips] = useState<PlannedTrip[]>([]);
 
@@ -258,26 +262,27 @@ export function TripsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+function makeStyles(c: Palette) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.background },
   body: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
   title: {
     fontSize: FONT.title,
     fontWeight: WEIGHT.bold,
-    color: COLORS.text,
+    color: c.text,
   },
   empty: { marginTop: SPACING.xl },
-  emptyText: { fontSize: FONT.heading, fontWeight: WEIGHT.bold, color: COLORS.text },
+  emptyText: { fontSize: FONT.heading, fontWeight: WEIGHT.bold, color: c.text },
   emptySub: {
     fontSize: FONT.body,
-    color: COLORS.muted,
+    color: c.muted,
     marginTop: SPACING.sm,
     lineHeight: 22,
   },
   list: { marginTop: SPACING.lg, gap: SPACING.md },
   card: {
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: c.border,
     borderRadius: RADII.card,
     padding: SPACING.lg,
     minHeight: TOUCH_MIN,
@@ -286,9 +291,9 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: FONT.heading,
     fontWeight: WEIGHT.bold,
-    color: COLORS.text,
+    color: c.text,
   },
-  cardMeta: { fontSize: FONT.meta, color: COLORS.muted, marginTop: SPACING.xs },
+  cardMeta: { fontSize: FONT.meta, color: c.muted, marginTop: SPACING.xs },
   cardActions: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginTop: SPACING.md },
   smallButton: {
     flex: 1,
@@ -299,14 +304,14 @@ const styles = StyleSheet.create({
     borderRadius: RADII.button,
     paddingHorizontal: SPACING.sm,
   },
-  outlineSmall: { borderColor: COLORS.primary },
-  primarySmall: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  smallButtonText: { fontSize: FONT.body, fontWeight: WEIGHT.bold, color: COLORS.primary },
-  smallButtonTextWhite: { fontSize: FONT.body, fontWeight: WEIGHT.bold, color: COLORS.white },
+  outlineSmall: { borderColor: c.primary },
+  primarySmall: { backgroundColor: c.primary, borderColor: c.primary },
+  smallButtonText: { fontSize: FONT.body, fontWeight: WEIGHT.bold, color: c.primary },
+  smallButtonTextWhite: { fontSize: FONT.body, fontWeight: WEIGHT.bold, color: c.white },
   sectionTitle: {
     fontSize: FONT.heading,
     fontWeight: WEIGHT.bold,
-    color: COLORS.text,
+    color: c.text,
     marginTop: SPACING.xl,
   },
   button: {
@@ -317,13 +322,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     marginTop: SPACING.md,
   },
-  primaryButton: { backgroundColor: COLORS.primary },
+  primaryButton: { backgroundColor: c.primary },
   whatsappButton: { backgroundColor: '#25D366' },
-  buttonText: { color: COLORS.white, fontSize: 16, fontWeight: WEIGHT.bold },
+  buttonText: { color: c.white, fontSize: 16, fontWeight: WEIGHT.bold },
   note: {
     fontSize: FONT.meta,
-    color: COLORS.muted,
+    color: c.muted,
     marginTop: SPACING.md,
     lineHeight: 18,
   },
-});
+  });
+}

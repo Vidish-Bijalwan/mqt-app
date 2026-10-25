@@ -62,7 +62,7 @@ const EN: Dict = {
   dataPrivacy: 'Data & privacy',
   chatTitle: 'Chat with the team',
   chatEmpty:
-    'Messages sent here go to the team as enquiries. Replies come via WhatsApp or a callback — there is no live chat in this app yet.',
+    'Messages sent here go to the team as enquiries. Replies come via WhatsApp or a callback — for instant answers, use MQT Support instant chat via the banner above.',
   chatFaq: 'Frequently asked questions',
   errorGeneric: 'Something went wrong. Please try again.',
   errorNetwork:
@@ -91,7 +91,7 @@ const HI: Dict = {
   dataPrivacy: 'डेटा और गोपनीयता',
   chatTitle: 'टीम से चैट करें',
   chatEmpty:
-    'यहाँ भेजे गए संदेश टीम तक पूछताछ के रूप में पहुँचते हैं। जवाब व्हाट्सऐप या कॉलबैक से मिलेगा — इस ऐप में अभी लाइव चैट नहीं है।',
+    'यहाँ भेजे गए संदेश टीम तक पूछताछ के रूप में पहुँचते हैं। जवाब व्हाट्सऐप या कॉलबैक से मिलेगा — तुरंत जवाब के लिए ऊपर दिए गए बैनर से MQT Support इंस्टेंट चैट का उपयोग करें।',
   chatFaq: 'अक्सर पूछे जाने वाले प्रश्न',
   errorGeneric: 'कुछ गलत हो गया। कृपया फिर से कोशिश करें।',
   errorNetwork:

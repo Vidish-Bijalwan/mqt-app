@@ -11,6 +11,7 @@ import { ChatScreen } from '../screens/ChatScreen';
 import { AccountScreen } from '../screens/AccountScreen';
 import { SPACING } from '../theme/tokens';
 import { useSettings } from '../context/SettingsContext';
+import { TabFade } from '../components/Motion';
 import type { TabParamList } from './types';
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -32,9 +33,48 @@ function HomeTabScreen(
     ComponentProps<typeof HomeScreen>
   >;
   return (
-    <Adapted
-      {...(props as unknown as ComponentProps<typeof HomeScreen>)}
-    />
+    <TabFade>
+      <Adapted
+        {...(props as unknown as ComponentProps<typeof HomeScreen>)}
+      />
+    </TabFade>
+  );
+}
+
+// v2.0.2 tab-focus fade: each tab screen's content fades in subtly
+// when the tab gains focus (TabFade, Animated API, reduced-motion
+// respected). The wrappers are the registered screen components, so
+// React Navigation still gives them route/navigation props; Chat's
+// wrapper forwards them (its package/ref prefill must survive).
+function PackagesTabScreen() {
+  return (
+    <TabFade>
+      <PackagesScreen />
+    </TabFade>
+  );
+}
+
+function TripsTabScreen() {
+  return (
+    <TabFade>
+      <TripsScreen />
+    </TabFade>
+  );
+}
+
+function ChatTabScreen(props: BottomTabScreenProps<TabParamList, 'Chat'>) {
+  return (
+    <TabFade>
+      <ChatScreen {...props} />
+    </TabFade>
+  );
+}
+
+function AccountTabScreen() {
+  return (
+    <TabFade>
+      <AccountScreen />
+    </TabFade>
   );
 }
 
@@ -92,22 +132,22 @@ export function TabNavigator() {
       />
       <Tab.Screen
         name="Packages"
-        component={PackagesScreen}
+        component={PackagesTabScreen}
         options={{ tabBarLabel: t('tabPackages') }}
       />
       <Tab.Screen
         name="Trips"
-        component={TripsScreen}
+        component={TripsTabScreen}
         options={{ tabBarLabel: t('tabTrips') }}
       />
       <Tab.Screen
         name="Chat"
-        component={ChatScreen}
+        component={ChatTabScreen}
         options={{ tabBarLabel: t('tabChat') }}
       />
       <Tab.Screen
         name="Account"
-        component={AccountScreen}
+        component={AccountTabScreen}
         options={{ tabBarLabel: t('tabAccount') }}
       />
     </Tab.Navigator>
