@@ -141,7 +141,7 @@ export function PackagesScreen() {
         <PackageList
           packages={results}
           onPressPackage={(pkg: Package) =>
-            navigation.navigate('PackageDetail', { slug: pkg.slug })
+            navigation.navigate('PackageDetail', { slug: pkg.slug, package: pkg })
           }
           onEnquirePackage={(pkg: Package) =>
             navigation.navigate('Enquiry', {

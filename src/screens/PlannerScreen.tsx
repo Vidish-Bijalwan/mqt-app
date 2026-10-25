@@ -183,7 +183,7 @@ export function PlannerScreen() {
     const price = getSearchPrice(pkg);
     void recordViewed(pkg.slug);
     if (price.hasPrice) void recordPriceSnapshot(pkg.slug, price.display);
-    navigation.navigate('PackageDetail', { slug: pkg.slug });
+    navigation.navigate('PackageDetail', { slug: pkg.slug, package: pkg });
   };
 
   const openNoteEditor = (slug: string) => {

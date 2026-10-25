@@ -47,6 +47,7 @@ import { GiftTripScreen } from './src/screens/GiftTripScreen';
 import { WhatsNewScreen } from './src/screens/WhatsNewScreen';
 import { DiagnosticsScreen } from './src/screens/DiagnosticsScreen';
 import { SettingsProvider, useSettings } from './src/context/SettingsContext';
+import { CatalogProvider } from './src/lib/catalog';
 import { decideUpdatePrompt, useAppConfig } from './src/lib/appConfig';
 import { whatsappAction } from './src/lib/contact';
 import {
@@ -445,9 +446,11 @@ export default function App() {
   return (
     <SettingsProvider>
       <SafeAreaProvider>
-        <NavigationContainer ref={navigationRef}>
-          <LaunchGate reduceMotion={reduceMotion} />
-        </NavigationContainer>
+        <CatalogProvider>
+          <NavigationContainer ref={navigationRef}>
+            <LaunchGate reduceMotion={reduceMotion} />
+          </NavigationContainer>
+        </CatalogProvider>
       </SafeAreaProvider>
     </SettingsProvider>
   );

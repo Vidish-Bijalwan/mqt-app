@@ -154,7 +154,7 @@ export function CompareScreen({ navigation }: Props) {
                   <Pressable
                     style={styles.detailButton}
                     onPress={() =>
-                      navigation.navigate('PackageDetail', { slug: pkg.slug })
+                      navigation.navigate('PackageDetail', { slug: pkg.slug, package: pkg })
                     }>
                     <Text style={styles.detailButtonText}>View details</Text>
                   </Pressable>

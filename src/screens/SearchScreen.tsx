@@ -238,7 +238,7 @@ export function SearchScreen({ navigation, route }: Props) {
       <PackageList
         packages={results}
         onPressPackage={(pkg) =>
-          navigation.navigate('PackageDetail', { slug: pkg.slug })
+          navigation.navigate('PackageDetail', { slug: pkg.slug, package: pkg })
         }
         onEnquirePackage={(pkg) =>
           navigation.navigate('Enquiry', {
@@ -396,7 +396,7 @@ export function SearchScreen({ navigation, route }: Props) {
                 <Pressable
                   style={styles.savedMain}
                   onPress={() =>
-                    navigation.navigate('PackageDetail', { slug: pkg.slug })
+                    navigation.navigate('PackageDetail', { slug: pkg.slug, package: pkg })
                   }>
                   <Text
                     style={[styles.savedText, { color: colors.text }]}

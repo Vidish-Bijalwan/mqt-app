@@ -67,7 +67,7 @@ export function DestinationHubScreen() {
               key={p.slug}
               style={[styles.card, { borderColor: colors.border, backgroundColor: colors.card }]}
               onPress={() =>
-                navigation.navigate('PackageDetail', { slug: p.slug })
+                navigation.navigate('PackageDetail', { slug: p.slug, package: p })
               }>
               <Text style={[styles.cardTitle, { color: colors.text, fontSize: fs(FONT.body) }]} numberOfLines={2}>
                 {p.title}

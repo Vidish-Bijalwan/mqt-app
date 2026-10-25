@@ -200,60 +200,62 @@ export function AccountScreen() {
         <Text style={[styles.note, { color: colors.muted, fontSize: fs(FONT.body) }]}>
           Saved on this device only. Used to prefill enquiry forms.
         </Text>
-        <Text style={[styles.label, { color: colors.text, fontSize: fs(FONT.body) }]}>Name</Text>
-        <TextInput
-          style={[styles.input, { borderColor: colors.border, color: colors.text }]}
-          value={profile.name}
-          onChangeText={(v) => setProfile({ ...profile, name: v })}
-          placeholder="Your full name"
-          placeholderTextColor={colors.placeholderText}
-          autoCapitalize="words"
-        />
-        <Text style={[styles.label, { color: colors.text, fontSize: fs(FONT.body) }]}>Phone</Text>
-        <TextInput
-          style={[styles.input, { borderColor: colors.border, color: colors.text }]}
-          value={profile.phone}
-          onChangeText={(v) => setProfile({ ...profile, phone: v })}
-          placeholder="Mobile number"
-          placeholderTextColor={colors.placeholderText}
-          keyboardType="phone-pad"
-        />
-        <Text style={[styles.label, { color: colors.text, fontSize: fs(FONT.body) }]}>Email</Text>
-        <TextInput
-          style={[styles.input, { borderColor: colors.border, color: colors.text }]}
-          value={profile.email}
-          onChangeText={(v) => setProfile({ ...profile, email: v })}
-          placeholder="you@example.com"
-          placeholderTextColor={colors.placeholderText}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        <Text style={[styles.label, { color: colors.text, fontSize: fs(FONT.body) }]}>Home city</Text>
-        <TextInput
-          style={[styles.input, { borderColor: colors.border, color: colors.text }]}
-          value={profile.homeCity}
-          onChangeText={(v) => setProfile({ ...profile, homeCity: v })}
-          placeholder="e.g. Dehradun"
-          placeholderTextColor={colors.placeholderText}
-          autoCapitalize="words"
-        />
-        <Text style={[styles.label, { color: colors.text, fontSize: fs(FONT.body) }]}>Travel preferences</Text>
-        <TextInput
-          style={[styles.input, styles.messageInput, { borderColor: colors.border, color: colors.text }]}
-          value={profile.travelPreferences}
-          onChangeText={(v) => setProfile({ ...profile, travelPreferences: v })}
-          placeholder="e.g. Mountains, family trips, budget stays"
-          placeholderTextColor={colors.placeholderText}
-          multiline
-        />
-        <Pressable style={[styles.button, styles.primaryButton]} onPress={handleSaveProfile}>
-          <Text style={styles.buttonText}>{t('save')} profile</Text>
-        </Pressable>
-        {profileSaved ? (
-          <Text style={[styles.note, { color: colors.muted, fontSize: fs(FONT.body) }]}>
-            Profile saved on this device.
-          </Text>
-        ) : null}
+        <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.card }]}>
+          <Text style={[styles.label, styles.cardFirstLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>Name</Text>
+          <TextInput
+            style={[styles.input, { borderColor: colors.border, color: colors.text }]}
+            value={profile.name}
+            onChangeText={(v) => setProfile({ ...profile, name: v })}
+            placeholder="Your full name"
+            placeholderTextColor={colors.placeholderText}
+            autoCapitalize="words"
+          />
+          <Text style={[styles.label, { color: colors.text, fontSize: fs(FONT.body) }]}>Phone</Text>
+          <TextInput
+            style={[styles.input, { borderColor: colors.border, color: colors.text }]}
+            value={profile.phone}
+            onChangeText={(v) => setProfile({ ...profile, phone: v })}
+            placeholder="Mobile number"
+            placeholderTextColor={colors.placeholderText}
+            keyboardType="phone-pad"
+          />
+          <Text style={[styles.label, { color: colors.text, fontSize: fs(FONT.body) }]}>Email</Text>
+          <TextInput
+            style={[styles.input, { borderColor: colors.border, color: colors.text }]}
+            value={profile.email}
+            onChangeText={(v) => setProfile({ ...profile, email: v })}
+            placeholder="you@example.com"
+            placeholderTextColor={colors.placeholderText}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          <Text style={[styles.label, { color: colors.text, fontSize: fs(FONT.body) }]}>Home city</Text>
+          <TextInput
+            style={[styles.input, { borderColor: colors.border, color: colors.text }]}
+            value={profile.homeCity}
+            onChangeText={(v) => setProfile({ ...profile, homeCity: v })}
+            placeholder="e.g. Dehradun"
+            placeholderTextColor={colors.placeholderText}
+            autoCapitalize="words"
+          />
+          <Text style={[styles.label, { color: colors.text, fontSize: fs(FONT.body) }]}>Travel preferences</Text>
+          <TextInput
+            style={[styles.input, styles.messageInput, { borderColor: colors.border, color: colors.text }]}
+            value={profile.travelPreferences}
+            onChangeText={(v) => setProfile({ ...profile, travelPreferences: v })}
+            placeholder="e.g. Mountains, family trips, budget stays"
+            placeholderTextColor={colors.placeholderText}
+            multiline
+          />
+          <Pressable style={[styles.button, styles.primaryButton]} onPress={handleSaveProfile}>
+            <Text style={styles.buttonText}>{t('save')} profile</Text>
+          </Pressable>
+          {profileSaved ? (
+            <Text style={[styles.note, { color: colors.muted, fontSize: fs(FONT.body) }]}>
+              Profile saved on this device.
+            </Text>
+          ) : null}
+        </View>
 
         <Text style={[styles.sectionTitle, { color: colors.text, fontSize: fs(FONT.heading) }]}>
           {t('settings')}
@@ -264,138 +266,144 @@ export function AccountScreen() {
           — remote push from the team is not connected yet. See the
           notification centre for all alerts and quiet hours.
         </Text>
-        <Pressable
-          style={[styles.button, styles.outlineButton]}
-          onPress={() => navigation.navigate('Notifications')}>
-          <Text style={[styles.outlineButtonText, { color: colors.primary }]}>Open notification centre</Text>
-        </Pressable>
-        <View style={styles.toggleRow}>
-          <Text style={[styles.toggleLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>
-            Trip updates (departure reminders)
-          </Text>
-          <Switch
-            value={n.tripUpdates}
-            onValueChange={(v) =>
-              updateSettings({ notifications: { ...n, tripUpdates: v } })
-            }
-          />
-        </View>
-        <View style={styles.toggleRow}>
-          <Text style={[styles.toggleLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>
-            Offers (recorded — no offer feed yet)
-          </Text>
-          <Switch
-            value={n.offers}
-            onValueChange={(v) =>
-              updateSettings({ notifications: { ...n, offers: v } })
-            }
-          />
-        </View>
-        <View style={styles.toggleRow}>
-          <Text style={[styles.toggleLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>
-            Reminders (price drops, bookings)
-          </Text>
-          <Switch
-            value={n.reminders}
-            onValueChange={(v) =>
-              updateSettings({ notifications: { ...n, reminders: v } })
-            }
-          />
-        </View>
+        <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.card }]}>
+          <Pressable
+            style={styles.cardRow}
+            onPress={() => navigation.navigate('Notifications')}>
+            <Text style={[styles.cardRowLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>Open notification centre</Text>
+            <Text style={[styles.navChevron, { color: colors.muted }]}>›</Text>
+          </Pressable>
+          <View style={styles.toggleRow}>
+            <Text style={[styles.toggleLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>
+              Trip updates (departure reminders)
+            </Text>
+            <Switch
+              value={n.tripUpdates}
+              onValueChange={(v) =>
+                updateSettings({ notifications: { ...n, tripUpdates: v } })
+              }
+            />
+          </View>
+          <View style={styles.toggleRow}>
+            <Text style={[styles.toggleLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>
+              Offers (recorded — no offer feed yet)
+            </Text>
+            <Switch
+              value={n.offers}
+              onValueChange={(v) =>
+                updateSettings({ notifications: { ...n, offers: v } })
+              }
+            />
+          </View>
+          <View style={styles.toggleRow}>
+            <Text style={[styles.toggleLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>
+              Reminders (price drops, bookings)
+            </Text>
+            <Switch
+              value={n.reminders}
+              onValueChange={(v) =>
+                updateSettings({ notifications: { ...n, reminders: v } })
+              }
+            />
+          </View>
 
-        <Text style={[styles.label, { color: colors.text, fontSize: fs(FONT.body) }]}>Language</Text>
-        <View style={styles.choiceRow}>
-          {(['en', 'hi'] as const).map((lang) => (
-            <Pressable
-              key={lang}
-              style={[
-                styles.choice,
-                {
-                  borderColor: settings.language === lang ? colors.primary : colors.border,
-                  backgroundColor: settings.language === lang ? colors.primary : colors.background,
-                },
-              ]}
-              onPress={() => updateSettings({ language: lang })}>
-              <Text style={[styles.choiceText, { color: settings.language === lang ? '#FFFFFF' : colors.text }]}>
-                {lang === 'en' ? 'English' : 'हिन्दी'}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+          <Text style={[styles.label, { color: colors.text, fontSize: fs(FONT.body) }]}>Language</Text>
+          <View style={styles.choiceRow}>
+            {(['en', 'hi'] as const).map((lang) => (
+              <Pressable
+                key={lang}
+                style={[
+                  styles.choice,
+                  {
+                    borderColor: settings.language === lang ? colors.primary : colors.border,
+                    backgroundColor: settings.language === lang ? colors.primary : colors.background,
+                  },
+                ]}
+                onPress={() => updateSettings({ language: lang })}>
+                <Text style={[styles.choiceText, { color: settings.language === lang ? '#FFFFFF' : colors.text }]}>
+                  {lang === 'en' ? 'English' : 'हिन्दी'}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
 
-        <View style={styles.toggleRow}>
-          <Text style={[styles.toggleLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>
-            Low-data mode (preference)
-          </Text>
-          <Switch
-            value={settings.dataSaver}
-            onValueChange={(v) => updateSettings({ dataSaver: v })}
-          />
-        </View>
+          <View style={styles.toggleRow}>
+            <Text style={[styles.toggleLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>
+              Low-data mode (preference)
+            </Text>
+            <Switch
+              value={settings.dataSaver}
+              onValueChange={(v) => updateSettings({ dataSaver: v })}
+            />
+          </View>
 
-        <Text style={[styles.label, { color: colors.text, fontSize: fs(FONT.body) }]}>Theme</Text>
-        <View style={styles.choiceRow}>
-          {(['light', 'dark'] as const).map((theme) => (
-            <Pressable
-              key={theme}
-              style={[
-                styles.choice,
-                {
-                  borderColor: settings.theme === theme ? colors.primary : colors.border,
-                  backgroundColor: settings.theme === theme ? colors.primary : colors.background,
-                },
-              ]}
-              onPress={() => updateSettings({ theme })}>
-              <Text style={[styles.choiceText, { color: settings.theme === theme ? '#FFFFFF' : colors.text }]}>
-                {theme === 'light' ? 'Light' : 'Dark'}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+          <Text style={[styles.label, { color: colors.text, fontSize: fs(FONT.body) }]}>Theme</Text>
+          <View style={styles.choiceRow}>
+            {(['light', 'dark'] as const).map((theme) => (
+              <Pressable
+                key={theme}
+                style={[
+                  styles.choice,
+                  {
+                    borderColor: settings.theme === theme ? colors.primary : colors.border,
+                    backgroundColor: settings.theme === theme ? colors.primary : colors.background,
+                  },
+                ]}
+                onPress={() => updateSettings({ theme })}>
+                <Text style={[styles.choiceText, { color: settings.theme === theme ? '#FFFFFF' : colors.text }]}>
+                  {theme === 'light' ? 'Light' : 'Dark'}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
 
-        <Text style={[styles.label, { color: colors.text, fontSize: fs(FONT.body) }]}>Font size</Text>
-        <View style={styles.choiceRow}>
-          {FONT_SCALES.map((s) => (
-            <Pressable
-              key={s.label}
-              style={[
-                styles.choice,
-                {
-                  borderColor: settings.fontScale === s.value ? colors.primary : colors.border,
-                  backgroundColor: settings.fontScale === s.value ? colors.primary : colors.background,
-                },
-              ]}
-              onPress={() => updateSettings({ fontScale: s.value })}>
-              <Text style={[styles.choiceText, { color: settings.fontScale === s.value ? '#FFFFFF' : colors.text }]}>
-                {s.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+          <Text style={[styles.label, { color: colors.text, fontSize: fs(FONT.body) }]}>Font size</Text>
+          <View style={styles.choiceRow}>
+            {FONT_SCALES.map((s) => (
+              <Pressable
+                key={s.label}
+                style={[
+                  styles.choice,
+                  {
+                    borderColor: settings.fontScale === s.value ? colors.primary : colors.border,
+                    backgroundColor: settings.fontScale === s.value ? colors.primary : colors.background,
+                  },
+                ]}
+                onPress={() => updateSettings({ fontScale: s.value })}>
+                <Text style={[styles.choiceText, { color: settings.fontScale === s.value ? '#FFFFFF' : colors.text }]}>
+                  {s.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
 
-        <View style={styles.toggleRow}>
-          <Text style={[styles.toggleLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>
-            Biometric unlock for this tab
-          </Text>
-          <Switch
-            value={settings.biometricEnabled}
-            onValueChange={handleBiometricToggle}
-          />
+          <View style={styles.toggleRow}>
+            <Text style={[styles.toggleLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>
+              Biometric unlock for this tab
+            </Text>
+            <Switch
+              value={settings.biometricEnabled}
+              onValueChange={handleBiometricToggle}
+            />
+          </View>
+          {biometricNote !== null ? (
+            <Text style={[styles.note, { color: colors.muted, fontSize: fs(FONT.body) }]}>
+              {biometricNote}
+            </Text>
+          ) : null}
         </View>
-        {biometricNote !== null ? (
-          <Text style={[styles.note, { color: colors.muted, fontSize: fs(FONT.body) }]}>
-            {biometricNote}
-          </Text>
-        ) : null}
 
         <Text style={[styles.sectionTitle, { color: colors.text, fontSize: fs(FONT.heading) }]}>
           {t('travelers')}
         </Text>
-        <Pressable
-          style={[styles.button, styles.outlineButton]}
-          onPress={() => navigation.navigate('Travelers')}>
-          <Text style={[styles.outlineButtonText, { color: colors.primary }]}>Manage travelers</Text>
-        </Pressable>
+        <View style={[styles.navCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
+          <Pressable
+            style={styles.navRow}
+            onPress={() => navigation.navigate('Travelers')}>
+            <Text style={[styles.navLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>Manage travelers</Text>
+            <Text style={[styles.navChevron, { color: colors.muted }]}>›</Text>
+          </Pressable>
+        </View>
 
         <Text style={[styles.sectionTitle, { color: colors.text, fontSize: fs(FONT.heading) }]}>
           Communication preferences
@@ -403,125 +411,154 @@ export function AccountScreen() {
         <Text style={[styles.note, { color: colors.muted, fontSize: fs(FONT.body) }]}>
           How you prefer the team to reach you about enquiries.
         </Text>
-        <View style={styles.toggleRow}>
-          <Text style={[styles.toggleLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>WhatsApp</Text>
-          <Switch
-            value={settings.whatsappPreferred}
-            onValueChange={(v) => {
-              updateSettings({
-                whatsappPreferred: v,
-                commPref: v ? 'whatsapp' : settings.commPref,
-              });
-            }}
-          />
-        </View>
-        <View style={styles.toggleRow}>
-          <Text style={[styles.toggleLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>SMS</Text>
-          <Switch
-            value={settings.smsPreferred}
-            onValueChange={(v) => {
-              updateSettings({
-                smsPreferred: v,
-                commPref: v ? 'sms' : settings.commPref,
-              });
-            }}
-          />
-        </View>
-        <View style={styles.toggleRow}>
-          <Text style={[styles.toggleLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>Call</Text>
-          <Switch
-            value={settings.callPreferred}
-            onValueChange={(v) => {
-              updateSettings({
-                callPreferred: v,
-                commPref: v ? 'call' : settings.commPref,
-              });
-            }}
-          />
+        <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.card }]}>
+          <View style={styles.toggleRow}>
+            <Text style={[styles.toggleLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>WhatsApp</Text>
+            <Switch
+              value={settings.whatsappPreferred}
+              onValueChange={(v) => {
+                updateSettings({
+                  whatsappPreferred: v,
+                  commPref: v ? 'whatsapp' : settings.commPref,
+                });
+              }}
+            />
+          </View>
+          <View style={styles.toggleRow}>
+            <Text style={[styles.toggleLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>SMS</Text>
+            <Switch
+              value={settings.smsPreferred}
+              onValueChange={(v) => {
+                updateSettings({
+                  smsPreferred: v,
+                  commPref: v ? 'sms' : settings.commPref,
+                });
+              }}
+            />
+          </View>
+          <View style={styles.toggleRow}>
+            <Text style={[styles.toggleLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>Call</Text>
+            <Switch
+              value={settings.callPreferred}
+              onValueChange={(v) => {
+                updateSettings({
+                  callPreferred: v,
+                  commPref: v ? 'call' : settings.commPref,
+                });
+              }}
+            />
+          </View>
         </View>
 
         <Text style={[styles.sectionTitle, { color: colors.text, fontSize: fs(FONT.heading) }]}>
           {t('login')}
         </Text>
-        <Pressable
-          style={[styles.button, styles.outlineButton]}
-          onPress={() => navigation.navigate('Login')}>
-          <Text style={[styles.outlineButtonText, { color: colors.primary }]}>Sign in (OTP not connected yet)</Text>
-        </Pressable>
+        <View style={[styles.navCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
+          <Pressable
+            style={styles.navRow}
+            onPress={() => navigation.navigate('Login')}>
+            <Text style={[styles.navLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>Sign in (OTP not connected yet)</Text>
+            <Text style={[styles.navChevron, { color: colors.muted }]}>›</Text>
+          </Pressable>
+        </View>
 
         <Text style={[styles.sectionTitle, { color: colors.text, fontSize: fs(FONT.heading) }]}>
           {t('dataPrivacy')}
         </Text>
-        <Pressable
-          style={[styles.button, styles.outlineButton]}
-          onPress={() => navigation.navigate('DataPrivacy')}>
-          <Text style={[styles.outlineButtonText, { color: colors.primary }]}>Export or delete my local data</Text>
-        </Pressable>
+        <View style={[styles.navCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
+          <Pressable
+            style={styles.navRow}
+            onPress={() => navigation.navigate('DataPrivacy')}>
+            <Text style={[styles.navLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>Export or delete my local data</Text>
+            <Text style={[styles.navChevron, { color: colors.muted }]}>›</Text>
+          </Pressable>
+        </View>
 
         <Text style={[styles.sectionTitle, { color: colors.text, fontSize: fs(FONT.heading) }]}>
           Explore
         </Text>
-        <Pressable
-          style={[styles.button, styles.outlineButton]}
-          onPress={() => navigation.navigate('Trust', undefined)}>
-          <Text style={[styles.outlineButtonText, { color: colors.primary }]}>Trust & safety</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.button, styles.outlineButton]}
-          onPress={() => navigation.navigate('Offers')}>
-          <Text style={[styles.outlineButtonText, { color: colors.primary }]}>Offers & more</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.button, styles.outlineButton]}
-          onPress={() => navigation.navigate('Invite')}>
-          <Text style={[styles.outlineButtonText, { color: colors.primary }]}>Invite friends</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.button, styles.outlineButton]}
-          onPress={() => navigation.navigate('DestinationHubs')}>
-          <Text style={[styles.outlineButtonText, { color: colors.primary }]}>Destination guides</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.button, styles.outlineButton]}
-          onPress={() => navigation.navigate('OfflineDiagnostics')}>
-          <Text style={[styles.outlineButtonText, { color: colors.primary }]}>Offline & diagnostics</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.button, styles.outlineButton]}
-          onPress={() => navigation.navigate('Diagnostics')}>
-          <Text style={[styles.outlineButtonText, { color: colors.primary }]}>Release health</Text>
-        </Pressable>
+        <View style={[styles.navCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
+          <Pressable
+            style={[styles.navRow, { borderBottomWidth: 1, borderColor: colors.border }]}
+            onPress={() => navigation.navigate('Trust', undefined)}>
+            <Text style={[styles.navLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>Trust & safety</Text>
+            <Text style={[styles.navChevron, { color: colors.muted }]}>›</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.navRow, { borderBottomWidth: 1, borderColor: colors.border }]}
+            onPress={() => navigation.navigate('Offers')}>
+            <Text style={[styles.navLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>Offers & more</Text>
+            <Text style={[styles.navChevron, { color: colors.muted }]}>›</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.navRow, { borderBottomWidth: 1, borderColor: colors.border }]}
+            onPress={() => navigation.navigate('Invite')}>
+            <Text style={[styles.navLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>Invite friends</Text>
+            <Text style={[styles.navChevron, { color: colors.muted }]}>›</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.navRow, { borderBottomWidth: 1, borderColor: colors.border }]}
+            onPress={() => navigation.navigate('DestinationHubs')}>
+            <Text style={[styles.navLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>Destination guides</Text>
+            <Text style={[styles.navChevron, { color: colors.muted }]}>›</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.navRow, { borderBottomWidth: 1, borderColor: colors.border }]}
+            onPress={() => navigation.navigate('OfflineDiagnostics')}>
+            <Text style={[styles.navLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>Offline & diagnostics</Text>
+            <Text style={[styles.navChevron, { color: colors.muted }]}>›</Text>
+          </Pressable>
+          <Pressable
+            style={styles.navRow}
+            onPress={() => navigation.navigate('Diagnostics')}>
+            <Text style={[styles.navLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>Release health</Text>
+            <Text style={[styles.navChevron, { color: colors.muted }]}>›</Text>
+          </Pressable>
+        </View>
 
         <Text style={[styles.sectionTitle, { color: colors.text, fontSize: fs(FONT.heading) }]}>
           Get help
         </Text>
-        <Pressable style={[styles.button, styles.primaryButton]} onPress={callAction}>
-          <Text style={styles.buttonText}>Call {CONTACT.phoneDisplay}</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.button, styles.whatsappButton]}
-          onPress={() =>
-            whatsappAction('Hi My Quick Trippers! I need help with my trip.')
-          }>
-          <Text style={styles.buttonText}>WhatsApp the team</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.button, styles.outlineButton]}
-          onPress={() => navigation.navigate('Trips')}>
-          <Text style={[styles.outlineButtonText, { color: colors.primary }]}>View my trips</Text>
-        </Pressable>
+        <View style={[styles.navCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
+          <View style={styles.pairRow}>
+            <Pressable style={[styles.pairButton, styles.primaryButton]} onPress={callAction}>
+              <Text style={styles.buttonText}>Call {CONTACT.phoneDisplay}</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.pairButton, styles.whatsappButton]}
+              onPress={() =>
+                whatsappAction('Hi My Quick Trippers! I need help with my trip.')
+              }>
+              <Text style={styles.buttonText}>WhatsApp the team</Text>
+            </Pressable>
+          </View>
+          <Pressable
+            style={[styles.navRow, { borderTopWidth: 1, borderColor: colors.border }]}
+            onPress={() => navigation.navigate('Trips')}>
+            <Text style={[styles.navLabel, { color: colors.text, fontSize: fs(FONT.body) }]}>View my trips</Text>
+            <Text style={[styles.navChevron, { color: colors.muted }]}>›</Text>
+          </Pressable>
+        </View>
 
         <Text style={[styles.sectionTitle, { color: colors.text, fontSize: fs(FONT.heading) }]}>
           About My Quick Trippers
         </Text>
-        {SITE_LINKS.map((link) => (
-          <Pressable
-            key={link.url}
-            style={[styles.linkRow, { borderColor: colors.border }]}
-            onPress={() => Linking.openURL(link.url)}>
-            <Text style={[styles.linkText, { color: colors.primary, fontSize: fs(FONT.body) }]}>{link.label}</Text>
-          </Pressable>
-        ))}
+        <View style={[styles.navCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
+          {SITE_LINKS.map((link, i) => (
+            <Pressable
+              key={link.url}
+              style={[
+                styles.navRow,
+                i < SITE_LINKS.length - 1
+                  ? { borderBottomWidth: 1, borderColor: colors.border }
+                  : null,
+              ]}
+              onPress={() => Linking.openURL(link.url)}>
+              <Text style={[styles.navLabel, { color: colors.primary, fontSize: fs(FONT.body) }]}>{link.label}</Text>
+              <Text style={[styles.navChevron, { color: colors.muted }]}>›</Text>
+            </Pressable>
+          ))}
+        </View>
 
         <Text style={[styles.version, { color: colors.muted, fontSize: fs(FONT.meta) }]}>
           {BRAND.name} · App version {APP_VERSION}
@@ -563,11 +600,51 @@ const styles = StyleSheet.create({
   outlineButton: { borderWidth: 1, borderColor: '#127C82' },
   buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: WEIGHT.bold },
   outlineButtonText: { fontSize: 16, fontWeight: WEIGHT.bold },
+  card: {
+    borderWidth: 1,
+    borderRadius: RADII.card,
+    marginTop: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+  },
+  cardFirstLabel: { marginTop: 0 },
+  navCard: {
+    borderWidth: 1,
+    borderRadius: RADII.card,
+    marginTop: SPACING.md,
+    overflow: 'hidden',
+  },
+  navRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 44,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+  },
+  navLabel: { flex: 1, fontWeight: WEIGHT.bold, paddingRight: SPACING.sm },
+  navChevron: { fontSize: 20 },
+  cardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 44,
+  },
+  cardRowLabel: { flex: 1, fontWeight: WEIGHT.bold, paddingRight: SPACING.sm },
+  pairRow: { flexDirection: 'row', gap: SPACING.sm, padding: SPACING.lg },
+  pairButton: {
+    flex: 1,
+    borderRadius: RADII.button,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.sm,
+  },
   toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    minHeight: TOUCH_MIN,
+    minHeight: 44,
     paddingVertical: SPACING.sm,
   },
   toggleLabel: { flex: 1, flexShrink: 1, paddingRight: SPACING.md },
@@ -580,12 +657,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
   },
   choiceText: { fontSize: FONT.body, fontWeight: WEIGHT.bold },
-  linkRow: {
-    minHeight: TOUCH_MIN,
-    justifyContent: 'center',
-    borderBottomWidth: 1,
-  },
-  linkText: {},
   version: { marginTop: SPACING.xl, textAlign: 'center' },
   lockedBody: { flex: 1, justifyContent: 'center', padding: SPACING.xl },
   lockedText: { marginTop: SPACING.md, textAlign: 'center', lineHeight: 22 },
