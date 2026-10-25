@@ -163,7 +163,7 @@ export function HomeScreen({ navigation }: Props) {
         <PackageList
           packages={filtered}
           onPressPackage={(pkg) =>
-            navigation.navigate('PackageDetail', { slug: pkg.slug })
+            navigation.navigate('PackageDetail', { slug: pkg.slug, package: pkg })
           }
           onEnquirePackage={(pkg) =>
             navigation.navigate('Enquiry', {

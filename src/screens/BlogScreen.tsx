@@ -103,6 +103,7 @@ export function BlogScreen({ navigation }: Props) {
   const [saved, setSaved] = useState<SavedArticleBody[]>([]);
   const [followed, setFollowed] = useState<string[]>([]);
   const [checkResult, setCheckResult] = useState<string | null>(null);
+  const [followExpanded, setFollowExpanded] = useState(false);
   const [hubTitle, setHubTitle] = useState<string | null>(null);
   const [feedStamp, setFeedStamp] = useState<string | null>(null);
 
@@ -167,6 +168,19 @@ export function BlogScreen({ navigation }: Props) {
       ),
     [posts, category, query],
   );
+
+  const filterActive = category !== null || query.trim() !== '';
+
+  // Reset for the filtered-empty state: clear the in-memory filter AND
+  // the autosaved draft, so the filter cannot silently restore on the
+  // next mount (the restored "Travel Tips" chip seen on the phone).
+  // Reuses the established saveBlogSearchDraft pattern with empty
+  // values; no new drafts.ts helper is needed.
+  function handleShowAllPosts() {
+    setQuery('');
+    setCategory(null);
+    void saveBlogSearchDraft({ query: '', category: null });
+  }
 
   const hubs = useMemo(
     () => buildDestinationHubs(packages, posts),
@@ -239,6 +253,7 @@ export function BlogScreen({ navigation }: Props) {
         </ScrollView>
       ) : section === 'saved' ? (
         <FlatList
+          style={{ flex: 1 }}
           data={saved}
           ListFooterComponent={
             <Pressable
@@ -280,6 +295,7 @@ export function BlogScreen({ navigation }: Props) {
         />
       ) : section === 'hubs' && activeHub === null ? (
         <FlatList
+          style={{ flex: 1 }}
           data={hubs}
           keyExtractor={(h) => h.id}
           contentContainerStyle={styles.list}
@@ -376,201 +392,234 @@ export function BlogScreen({ navigation }: Props) {
           </Pressable>
         </ScrollView>
       ) : (
-        <>
-          <View style={styles.searchWrap}>
-            <TextInput
-              style={[styles.search, { borderColor: colors.border, color: colors.text }]}
-              placeholder="Search blog posts…"
-              placeholderTextColor={colors.placeholderText}
-              value={query}
-              onChangeText={setQuery}
-              returnKeyType="search"
-            />
-          </View>
-          {categories.length > 0 ? (
-            <View style={styles.chipRow}>
-              <Pressable
-                style={[
-                  styles.chip,
-                  {
-                    borderColor: category === null ? colors.primary : colors.border,
-                    backgroundColor: category === null ? colors.primary : colors.background,
-                  },
-                ]}
-                onPress={() => setCategory(null)}>
-                <Text style={[styles.chipText, { color: category === null ? '#FFFFFF' : colors.text }]}>
-                  All
-                </Text>
-              </Pressable>
-              {categories.map((c) => (
-                <Pressable
-                  key={c}
-                  style={[
-                    styles.chip,
-                    {
-                      borderColor: category === c ? colors.primary : colors.border,
-                      backgroundColor: category === c ? colors.primary : colors.background,
-                    },
-                  ]}
-                  onPress={() => setCategory(c)}>
-                  <Text style={[styles.chipText, { color: category === c ? '#FFFFFF' : colors.text }]}>
-                    {c}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          ) : null}
-          {categories.length > 0 ? (
-            <View style={styles.followRow}>
-              <Text style={[styles.followLabel, { color: colors.muted, fontSize: fs(FONT.meta) }]}>
-                Follow a category for new-guide alerts (in-app only, no push):
-              </Text>
-              <View style={styles.chipRow}>
-                {categories.map((c) => {
-                  const isFollowed = followed.includes(c);
-                  return (
+        <FlatList
+          style={{ flex: 1 }}
+          data={filtered}
+          keyExtractor={(p) => p.slug}
+          contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl refreshing={loading} onRefresh={refresh} />
+          }
+          ListHeaderComponent={
+            <View>
+              <View style={styles.searchWrap}>
+                <TextInput
+                  style={[styles.search, { borderColor: colors.border, color: colors.text }]}
+                  placeholder="Search blog posts…"
+                  placeholderTextColor={colors.placeholderText}
+                  value={query}
+                  onChangeText={setQuery}
+                  returnKeyType="search"
+                />
+              </View>
+              {categories.length > 0 ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.chipScroll}>
+                  <Pressable
+                    style={[
+                      styles.chip,
+                      {
+                        borderColor: category === null ? colors.primary : colors.border,
+                        backgroundColor: category === null ? colors.primary : colors.background,
+                      },
+                    ]}
+                    onPress={() => setCategory(null)}>
+                    <Text style={[styles.chipText, { color: category === null ? '#FFFFFF' : colors.text }]}>
+                      All
+                    </Text>
+                  </Pressable>
+                  {categories.map((c) => (
                     <Pressable
-                      key={`follow-${c}`}
+                      key={c}
                       style={[
                         styles.chip,
                         {
-                          borderColor: isFollowed ? colors.primary : colors.border,
-                          backgroundColor: isFollowed ? colors.primary : colors.background,
+                          borderColor: category === c ? colors.primary : colors.border,
+                          backgroundColor: category === c ? colors.primary : colors.background,
                         },
                       ]}
-                      onPress={() => {
-                        void toggleFollowedCategory(c).then((now) => {
-                          setFollowed((prev) =>
-                            now ? [...prev, c] : prev.filter((x) => x !== c),
-                          );
-                        });
-                      }}>
-                      <Text style={[styles.chipText, { color: isFollowed ? '#FFFFFF' : colors.text }]}>
-                        {isFollowed ? `✓ ${c}` : `Follow ${c}`}
+                      onPress={() => setCategory(c)}>
+                      <Text style={[styles.chipText, { color: category === c ? '#FFFFFF' : colors.text }]}>
+                        {c}
                       </Text>
                     </Pressable>
-                  );
-                })}
-              </View>
-              <Pressable
-                style={[styles.button, styles.outlineButton]}
-                onPress={() => {
-                  void checkNewBlogPosts(posts).then((r) => {
-                    setCheckResult(
-                      r.created > 0
-                        ? `${r.created} new guide${r.created === 1 ? '' : 's'} added to your notification centre.`
-                        : 'No new guides in your followed categories.',
-                    );
-                  });
-                }}>
-                <Text style={[styles.outlineButtonText, { color: colors.primary }]}>
-                  Check for new guides
-                </Text>
-              </Pressable>
-              {checkResult !== null ? (
-                <Text style={[styles.followLabel, { color: colors.muted, fontSize: fs(FONT.meta) }]}>
-                  {checkResult}
-                </Text>
+                  ))}
+                </ScrollView>
+              ) : null}
+              {categories.length > 0 ? (
+                <View style={styles.followWrap}>
+                  <Pressable
+                    style={[styles.followToggle, { borderColor: colors.border, backgroundColor: colors.card }]}
+                    onPress={() => setFollowExpanded((v) => !v)}>
+                    <Text style={[styles.followToggleText, { color: colors.text, fontSize: fs(FONT.body) }]}>
+                      Follow categories for alerts
+                    </Text>
+                    <Text style={[styles.followToggleChevron, { color: colors.muted }]}>
+                      {followExpanded ? '▾' : '▸'}
+                    </Text>
+                  </Pressable>
+                  {followExpanded ? (
+                    <View>
+                      <Text style={[styles.followLabel, { color: colors.muted, fontSize: fs(FONT.meta) }]}>
+                        Follow a category for new-guide alerts (in-app only, no push):
+                      </Text>
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.chipScroll}>
+                        {categories.map((c) => {
+                          const isFollowed = followed.includes(c);
+                          return (
+                            <Pressable
+                              key={`follow-${c}`}
+                              style={[
+                                styles.chip,
+                                {
+                                  borderColor: isFollowed ? colors.primary : colors.border,
+                                  backgroundColor: isFollowed ? colors.primary : colors.background,
+                                },
+                              ]}
+                              onPress={() => {
+                                void toggleFollowedCategory(c).then((now) => {
+                                  setFollowed((prev) =>
+                                    now ? [...prev, c] : prev.filter((x) => x !== c),
+                                  );
+                                });
+                              }}>
+                              <Text style={[styles.chipText, { color: isFollowed ? '#FFFFFF' : colors.text }]}>
+                                {isFollowed ? `✓ ${c}` : `Follow ${c}`}
+                              </Text>
+                            </Pressable>
+                          );
+                        })}
+                      </ScrollView>
+                      <View style={styles.followActionWrap}>
+                        <Pressable
+                          style={[styles.button, styles.outlineButton, styles.followCheckButton]}
+                          onPress={() => {
+                            void checkNewBlogPosts(posts).then((r) => {
+                              setCheckResult(
+                                r.created > 0
+                                  ? `${r.created} new guide${r.created === 1 ? '' : 's'} added to your notification centre.`
+                                  : 'No new guides in your followed categories.',
+                              );
+                            });
+                          }}>
+                          <Text style={[styles.outlineButtonText, { color: colors.primary }]}>
+                            Check for new guides
+                          </Text>
+                        </Pressable>
+                        {checkResult !== null ? (
+                          <Text style={[styles.followLabel, styles.followResult, { color: colors.muted, fontSize: fs(FONT.meta) }]}>
+                            {checkResult}
+                          </Text>
+                        ) : null}
+                      </View>
+                    </View>
+                  ) : null}
+                </View>
               ) : null}
             </View>
-          ) : null}
-
-          {loading && posts.length === 0 ? (
-            <View style={styles.center}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <Text style={[styles.centerText, { color: colors.muted, fontSize: fs(FONT.body) }]}>{t('loading')}</Text>
-            </View>
-          ) : error !== null && posts.length === 0 ? (
-            <View style={styles.center}>
-              <Text style={[styles.centerTitle, { color: colors.text, fontSize: fs(FONT.heading) }]}>
-                Could not load blog posts
-              </Text>
-              <Text style={[styles.centerText, { color: colors.muted, fontSize: fs(FONT.body) }]}>
-                {error.message}
-              </Text>
-              <Pressable style={[styles.button, styles.primaryButton]} onPress={refresh}>
-                <Text style={styles.buttonText}>{t('retry')}</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.button, styles.whatsappButton]}
-                onPress={() =>
-                  whatsappAction('Hi My Quick Trippers! The blog is not loading in the app. Could you share the latest guides?')
-                }>
-                <Text style={styles.buttonText}>Try WhatsApp instead</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.button, styles.outlineButton]}
-                onPress={() => Linking.openURL(BLOG_URL)}>
-                <Text style={[styles.outlineButtonText, { color: colors.primary }]}>Open in browser</Text>
-              </Pressable>
-            </View>
-          ) : (
-            <FlatList
-              data={filtered}
-              keyExtractor={(p) => p.slug}
-              contentContainerStyle={styles.list}
-              refreshControl={
-                <RefreshControl refreshing={loading} onRefresh={refresh} />
-              }
-              ListEmptyComponent={
-                <View style={styles.center}>
-                  <Text style={[styles.centerText, { color: colors.muted, fontSize: fs(FONT.body) }]}>
-                    No blog posts match your search.
-                  </Text>
-                  <Pressable
-                    style={[styles.button, styles.outlineButton]}
-                    onPress={() => Linking.openURL(BLOG_URL)}>
-                    <Text style={[styles.outlineButtonText, { color: colors.primary }]}>Open in browser</Text>
-                  </Pressable>
-                </View>
-              }
-              ListFooterComponent={
-                <View style={styles.footerNote}>
-                  <Text style={[styles.footerText, { color: colors.muted, fontSize: fs(FONT.meta) }]}>
-                    Blog feed last updated: {formatStamp(feedStamp)}
-                    {error !== null ? ' · Showing saved posts — pull to refresh to try again.' : ''}
-                  </Text>
-                  <Pressable
-                    style={[styles.button, styles.outlineButton]}
-                    onPress={() => Linking.openURL(BLOG_URL)}>
-                    <Text style={[styles.outlineButtonText, { color: colors.primary }]}>Open in browser</Text>
-                  </Pressable>
-                </View>
-              }
-              renderItem={({ item }) => (
-                <Pressable
-                  style={[styles.card, { borderColor: colors.border, backgroundColor: colors.card }]}
-                  onPress={() =>
-                    navigation.navigate('BlogArticle', {
-                      slug: item.slug,
-                      title: item.title,
-                    })
-                  }>
-                  <Text style={[styles.cardTitle, { color: colors.text, fontSize: fs(FONT.heading) }]} numberOfLines={2}>
-                    {item.title}
-                  </Text>
-                  {item.category !== '' ? (
-                    <Text style={[styles.cardMeta, { color: colors.muted, fontSize: fs(FONT.meta) }]}>{item.category}</Text>
-                  ) : null}
-                  {item.excerpt !== '' ? (
-                    <Text style={[styles.cardExcerpt, { color: colors.muted, fontSize: fs(FONT.body) }]} numberOfLines={3}>
-                      {item.excerpt}
-                    </Text>
-                  ) : null}
-                  {item.publishedAt !== '' ? (
-                    <Text style={[styles.cardMeta, { color: colors.muted, fontSize: fs(FONT.meta) }]}>
-                      {new Date(item.publishedAt).toLocaleDateString(undefined, {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                      })}
-                    </Text>
-                  ) : null}
+          }
+          ListEmptyComponent={
+            loading && posts.length === 0 ? (
+              <View style={styles.center}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={[styles.centerText, { color: colors.muted, fontSize: fs(FONT.body) }]}>{t('loading')}</Text>
+              </View>
+            ) : error !== null && posts.length === 0 ? (
+              <View style={styles.center}>
+                <Text style={[styles.centerTitle, { color: colors.text, fontSize: fs(FONT.heading) }]}>
+                  Could not load blog posts
+                </Text>
+                <Text style={[styles.centerText, { color: colors.muted, fontSize: fs(FONT.body) }]}>
+                  {error.message}
+                </Text>
+                <Pressable style={[styles.button, styles.primaryButton]} onPress={refresh}>
+                  <Text style={styles.buttonText}>{t('retry')}</Text>
                 </Pressable>
-              )}
-            />
+                <Pressable
+                  style={[styles.button, styles.whatsappButton]}
+                  onPress={() =>
+                    whatsappAction('Hi My Quick Trippers! The blog is not loading in the app. Could you share the latest guides?')
+                  }>
+                  <Text style={styles.buttonText}>Try WhatsApp instead</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.button, styles.outlineButton]}
+                  onPress={() => Linking.openURL(BLOG_URL)}>
+                  <Text style={[styles.outlineButtonText, { color: colors.primary }]}>Open in browser</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <View style={styles.center}>
+                <Text style={[styles.centerText, { color: colors.muted, fontSize: fs(FONT.body) }]}>
+                  No blog posts match your search.
+                </Text>
+                {filterActive ? (
+                  <Pressable
+                    style={[styles.button, styles.primaryButton]}
+                    onPress={handleShowAllPosts}>
+                    <Text style={styles.buttonText}>Show all posts</Text>
+                  </Pressable>
+                ) : null}
+                <Pressable
+                  style={[styles.button, styles.outlineButton]}
+                  onPress={() => Linking.openURL(BLOG_URL)}>
+                  <Text style={[styles.outlineButtonText, { color: colors.primary }]}>Open in browser</Text>
+                </Pressable>
+              </View>
+            )
+          }
+          ListFooterComponent={
+            filtered.length > 0 ? (
+              <View style={styles.footerNote}>
+                <Text style={[styles.footerText, { color: colors.muted, fontSize: fs(FONT.meta) }]}>
+                  Blog feed last updated: {formatStamp(feedStamp)}
+                  {error !== null ? ' · Showing saved posts — pull to refresh to try again.' : ''}
+                </Text>
+                <Pressable
+                  style={[styles.button, styles.outlineButton]}
+                  onPress={() => Linking.openURL(BLOG_URL)}>
+                  <Text style={[styles.outlineButtonText, { color: colors.primary }]}>Open in browser</Text>
+                </Pressable>
+              </View>
+            ) : undefined
+          }
+          renderItem={({ item }) => (
+            <Pressable
+              style={[styles.card, { borderColor: colors.border, backgroundColor: colors.card }]}
+              onPress={() =>
+                navigation.navigate('BlogArticle', {
+                  slug: item.slug,
+                  title: item.title,
+                })
+              }>
+              <Text style={[styles.cardTitle, { color: colors.text, fontSize: fs(FONT.heading) }]} numberOfLines={2}>
+                {item.title}
+              </Text>
+              {item.category !== '' ? (
+                <Text style={[styles.cardMeta, { color: colors.muted, fontSize: fs(FONT.meta) }]}>{item.category}</Text>
+              ) : null}
+              {item.excerpt !== '' ? (
+                <Text style={[styles.cardExcerpt, { color: colors.muted, fontSize: fs(FONT.body) }]} numberOfLines={3}>
+                  {item.excerpt}
+                </Text>
+              ) : null}
+              {item.publishedAt !== '' ? (
+                <Text style={[styles.cardMeta, { color: colors.muted, fontSize: fs(FONT.meta) }]}>
+                  {new Date(item.publishedAt).toLocaleDateString(undefined, {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  })}
+                </Text>
+              ) : null}
+            </Pressable>
           )}
-        </>
+        />
       )}
     </SafeAreaView>
   );
@@ -605,12 +654,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     fontSize: FONT.body,
   },
-  chipRow: {
+  chipScroll: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: SPACING.sm,
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.md,
+    paddingBottom: SPACING.xs,
   },
   chip: {
     minHeight: 40,
@@ -620,9 +669,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
   },
   chipText: { fontSize: FONT.body, fontWeight: WEIGHT.bold },
-  followRow: { paddingHorizontal: 0, paddingTop: SPACING.sm },
+  followWrap: { paddingTop: SPACING.sm },
+  followToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 44,
+    borderWidth: 1,
+    borderRadius: RADII.button,
+    paddingHorizontal: SPACING.lg,
+    marginHorizontal: SPACING.lg,
+  },
+  followToggleText: { fontWeight: WEIGHT.bold },
+  followToggleChevron: { fontSize: 20 },
+  followActionWrap: { paddingHorizontal: SPACING.lg },
+  followCheckButton: { marginTop: SPACING.md },
+  followResult: { paddingHorizontal: 0 },
   followLabel: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm, lineHeight: 18 },
-  list: { padding: SPACING.lg, gap: SPACING.md },
+  list: { padding: SPACING.lg, gap: SPACING.md, flexGrow: 1 },
   card: { borderWidth: 1, borderRadius: RADII.card, padding: SPACING.lg },
   cardTitle: { fontWeight: WEIGHT.bold },
   cardMeta: { marginTop: SPACING.xs },

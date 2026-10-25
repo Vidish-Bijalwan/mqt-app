@@ -1,4 +1,5 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
+import type { CatalogPackage } from '../lib/catalog';
 
 /**
  * Typed React Navigation params. Route names and param shapes for the
@@ -32,7 +33,15 @@ export type RootStackParamList = {
    * back to the stack.
    */
   Home: undefined;
-  PackageDetail: { slug: string };
+  /**
+   * v2.0.1: list screens pass the full package object alongside the
+   * slug so detail renders immediately even while the shared catalogue
+   * is still loading. `package` is optional: slug-only navigations
+   * (notifications, trips, blog hubs) still work via the catalogue
+   * lookup, gated on catalogue loading. No cycle: catalog.ts does not
+   * import this file.
+   */
+  PackageDetail: { slug: string; package?: CatalogPackage };
   /**
    * Enquiry form for a package (same Leads table as the website).
    * v1.2 optional params: travelerCount / travelerNames prefill the

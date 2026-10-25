@@ -10,8 +10,17 @@
  * When the API omits a price field, the result is "no price" (empty
  * strings, hasPrice false) — never a guessed number. No PII is logged.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Dispatch, SetStateAction } from 'react';
+import {
+  createContext,
+  createElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ApiError, SITE_BASE } from './api';
 import { packages as bundledPackages } from '../data/packages';
@@ -258,29 +267,58 @@ export async function fetchCatalog(): Promise<CatalogResult> {
   throw lastError;
 }
 
-/* -------------------------------- hook ---------------------------------- */
+/**
+ * Single-attempt live fetch (no retry). Used ONLY for the session's
+ * deferred background load in CatalogProvider: on a slow connection a
+ * second 15s attempt would double the window in which taps feel dead,
+ * and the provider already shows bundled/cached data meanwhile, so a
+ * retry adds nothing the user can see. Explicit refresh() still uses
+ * fetchCatalog() (with its retry) above.
+ */
+export async function fetchCatalogSingle(): Promise<CatalogResult> {
+  const result = await fetchCatalogOnce();
+  await writeCachedCatalog(result);
+  return result;
+}
+
+/* --------------------------- shared provider ---------------------------- */
 
 /**
- * Live catalogue hook.
+ * Shared catalogue provider (v2.0.1 bugfix).
  *
- * Returns the bundled catalogue immediately (source 'bundled'), then
- * fetches live in the background. On success the list is replaced and
- * cached (source 'live'). On failure the cached list is used when
- * present (source 'cache'), otherwise the bundled list stays, and
- * `error` is set in both failure cases so the screen can offer a retry.
- * refresh() forces a refetch (network, no cache short-circuit).
+ * Previously every screen called useCatalog() and every hook instance
+ * fired its own GET /api/packages (525KB, 15s timeout x2 attempts), so
+ * Home + Packages mounting together at launch saturated a slow
+ * connection and the JS thread and taps felt dead. Now ONE provider,
+ * mounted once at the app root, owns the catalogue and every screen
+ * reads the same state through useCatalog().
+ *
+ * Load order: bundled catalogue instantly (initial state) -> cached
+ * catalogue from AsyncStorage (fast, local) -> ONE live fetch in the
+ * background, deferred until after first paint. `loading` stays true
+ * until that session background attempt settles (success or failure),
+ * so a detail screen never concludes "not found" while the live
+ * catalogue is still in flight. Screens render the bundled/cached list
+ * while loading; only the detail not-found decision gates on loading.
+ * On live failure the cached list is used when present (source
+ * 'cache'), otherwise the bundled list stays, and `error` is set in
+ * both failure cases so the screen can offer a retry. A live response
+ * with zero usable entries never wipes the catalogue (fetchCatalogOnce
+ * throws, and the loader falls back to cache / bundled instead).
+ * refresh() forces a refetch with the retrying fetchCatalog().
  */
 /**
- * Module-level catalogue loader. It takes the hook's setters explicitly
- * so the mount effect can call it without tripping
+ * Module-level catalogue loaders. They take the provider's setters
+ * explicitly so the mount effect can call them without tripping
  * react-hooks/set-state-in-effect: that rule inlines component-scope
  * callbacks called from effects and flags their setState calls, even
  * though every setState here runs after an await (network/cache reads).
- * A module-level function is opaque to that analysis, and the loader
- * itself is unchanged behaviourally. The initial useState(true) marks
- * loading on mount; refresh() marks it before re-running the loader.
+ * Module-level functions are opaque to that analysis. The initial
+ * useState(true) marks loading on mount; refresh() marks it before
+ * re-running the loader.
  */
 async function runCatalogLoad(args: {
+  fetchFn: () => Promise<CatalogResult>;
   setPackages: Dispatch<SetStateAction<CatalogPackage[]>>;
   setSource: Dispatch<SetStateAction<CatalogSource>>;
   setUpdatedAt: Dispatch<SetStateAction<string | null>>;
@@ -289,6 +327,7 @@ async function runCatalogLoad(args: {
   mountedRef: { current: boolean };
 }): Promise<void> {
   const {
+    fetchFn,
     setPackages,
     setSource,
     setUpdatedAt,
@@ -297,7 +336,7 @@ async function runCatalogLoad(args: {
     mountedRef,
   } = args;
   try {
-    const result = await fetchCatalog();
+    const result = await fetchFn();
     if (!mountedRef.current) return;
     setPackages(result.packages);
     setSource('live');
@@ -323,7 +362,64 @@ async function runCatalogLoad(args: {
   }
 }
 
-export function useCatalog(): UseCatalogResult {
+/**
+ * Fast local step: promote the cached catalogue over the bundled one
+ * without touching `loading` or `error` — the session live attempt is
+ * still pending, so loading must stay true until it settles.
+ */
+async function runCatalogCacheLoad(args: {
+  setPackages: Dispatch<SetStateAction<CatalogPackage[]>>;
+  setSource: Dispatch<SetStateAction<CatalogSource>>;
+  setUpdatedAt: Dispatch<SetStateAction<string | null>>;
+  mountedRef: { current: boolean };
+}): Promise<void> {
+  const { setPackages, setSource, setUpdatedAt, mountedRef } = args;
+  const cached = await readCachedCatalog();
+  if (!mountedRef.current || cached === null) return;
+  setPackages(cached.packages);
+  setSource('cache');
+  setUpdatedAt(cached.updatedAt);
+}
+
+/** Fallback if the first-paint deferral never fires. */
+const BACKGROUND_FALLBACK_MS = 1500;
+
+/**
+ * Defer `start` until after first paint, with a timeout guard.
+ *
+ * NOTE: InteractionManager was removed from react-native core in
+ * 0.88 (this app's RN version) — importing it is a type error and
+ * accessing it throws in DEV — so the deferral is requestAnimationFrame
+ * followed by a zero-delay timeout (i.e. after the paint the frame
+ * schedules), with the 1500ms fallback timer as the guard that ensures
+ * the background load still fires even if the frame callback never
+ * runs. Same observable contract as runAfterInteractions + fallback:
+ * first paint is never blocked by the 525KB fetch, and the load is
+ * never lost. Returns a cleanup that cancels both timers.
+ */
+function deferAfterFirstPaint(start: () => void): () => void {
+  let done = false;
+  const run = () => {
+    if (done) return;
+    done = true;
+    start();
+  };
+  let rafId: number | null = null;
+  if (typeof requestAnimationFrame === 'function') {
+    rafId = requestAnimationFrame(() => {
+      setTimeout(run, 0);
+    });
+  }
+  const timer = setTimeout(run, BACKGROUND_FALLBACK_MS);
+  return () => {
+    if (rafId !== null) cancelAnimationFrame(rafId);
+    clearTimeout(timer);
+  };
+}
+
+const CatalogContext = createContext<UseCatalogResult | null>(null);
+
+export function CatalogProvider({ children }: { children: ReactNode }) {
   const [packages, setPackages] = useState<CatalogPackage[]>(
     bundledPackages as CatalogPackage[],
   );
@@ -332,28 +428,46 @@ export function useCatalog(): UseCatalogResult {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<ApiError | null>(null);
   const mountedRef = useRef(true);
+  const sessionAttemptedRef = useRef(false);
 
   useEffect(() => {
     mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    void runCatalogLoad({
+    void runCatalogCacheLoad({
       setPackages,
       setSource,
       setUpdatedAt,
-      setError,
-      setLoading,
       mountedRef,
     });
+    // Deferred single background attempt: run after first paint, with
+    // a timeout guard so it still fires even if the frame callback
+    // never runs. The `started` guard keeps it to one attempt per
+    // session (deferAfterFirstPaint also guards against double-fire).
+    let started = false;
+    const start = () => {
+      if (started || sessionAttemptedRef.current) return;
+      started = true;
+      sessionAttemptedRef.current = true;
+      void runCatalogLoad({
+        fetchFn: fetchCatalogSingle,
+        setPackages,
+        setSource,
+        setUpdatedAt,
+        setError,
+        setLoading,
+        mountedRef,
+      });
+    };
+    const cancelDeferred = deferAfterFirstPaint(start);
+    return () => {
+      mountedRef.current = false;
+      cancelDeferred();
+    };
   }, []);
 
   const refresh = useCallback(() => {
     if (mountedRef.current) setLoading(true);
     void runCatalogLoad({
+      fetchFn: fetchCatalog,
       setPackages,
       setSource,
       setUpdatedAt,
@@ -363,5 +477,43 @@ export function useCatalog(): UseCatalogResult {
     });
   }, []);
 
-  return { packages, source, updatedAt, loading, error, refresh };
+  const catalogValue = useMemo<UseCatalogResult>(
+    () => ({ packages, source, updatedAt, loading, error, refresh }),
+    [packages, source, updatedAt, loading, error, refresh],
+  );
+
+  // No JSX here: this file is catalog.ts, not .tsx, so the provider
+  // renders via createElement (keeps the provider beside the fetch /
+  // cache helpers it owns, with no new file or import cycle).
+  // react-hooks/refs misfires on the props object below (it reads the
+  // `value` key as a ref being passed during render); catalogValue is
+  // a useMemo result, not a ref, and no .current is read here — so
+  // the rule is disabled for just this return statement.
+  /* eslint-disable react-hooks/refs */
+  return createElement(
+    CatalogContext.Provider,
+    { value: catalogValue },
+    children,
+  );
+  /* eslint-enable react-hooks/refs */
+}
+
+/**
+ * Shared catalogue hook. Consumes CatalogProvider (mounted once at the
+ * app root); the return shape is unchanged, so existing screens do not
+ * change. Outside a provider (isolated render only) it falls back to
+ * the bundled catalogue with loading false and a no-op refresh.
+ */
+const fallbackCatalog: UseCatalogResult = {
+  packages: bundledPackages as CatalogPackage[],
+  source: 'bundled',
+  updatedAt: null,
+  loading: false,
+  error: null,
+  refresh: () => undefined,
+};
+
+export function useCatalog(): UseCatalogResult {
+  const ctx = useContext(CatalogContext);
+  return ctx ?? fallbackCatalog;
 }

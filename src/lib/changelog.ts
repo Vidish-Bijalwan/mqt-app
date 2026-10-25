@@ -23,6 +23,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.0.1',
+    title: "What's new in v2.0.1",
+    items: [
+      'Faster package lists: the catalogue now loads once per session instead of once per screen, so tabs respond instead of freezing on slow connections.',
+      'Package details open instantly from lists, with a loading state instead of a false “could not be found” while the catalogue is still loading.',
+      'Blog feed layout fixed so posts display, with the category filter in one scrolling row and a “Show all posts” reset.',
+      'Account and package-detail actions regrouped into compact cards instead of long stacks of large buttons.',
+    ],
+  },
+  {
     version: '2.0.0',
     title: "What's new in v2.0",
     items: [

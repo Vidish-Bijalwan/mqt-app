@@ -26,7 +26,7 @@ export const CONTACT = {
  * App version shown in the Account tab. Bumped by the parent on release
  * (v1.1.0 next) — do not bump it in feature work.
  */
-export const APP_VERSION = '2.0.0';
+export const APP_VERSION = '2.0.1';
 
 export function whatsappEnquiryUrl(packageName: string): string {
   const text = `Hi My Quick Trippers! I would like to enquire about the "${packageName}" package. Please share details and the final quote.`;

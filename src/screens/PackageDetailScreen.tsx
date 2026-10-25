@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Animated,
   Pressable,
   ScrollView,
@@ -74,15 +75,26 @@ export function PackageDetailScreen({ route, navigation }: Props) {
     }).start();
   }, [photoAnim]);
 
+  // v2.0.1: render from the full package object passed via navigation
+  // params when present (list -> detail renders immediately, even
+  // while the shared catalogue is still loading). Otherwise fall back
+  // to the shared-catalogue lookup (slug-only navigations: trips,
+  // notifications, blog hubs). The lookup object changes identity when
+  // the catalogue refreshes, so the recording effect below re-runs
+  // once per catalogue update, as before.
+  const pkg =
+    route.params.package ??
+    catalog.packages.find((p) => p.slug === route.params.slug);
+
   // v2 items 84/88: record the displayed price + the view itself so
   // price history and recently-viewed cover detail views too (not
   // just planner/trip screens). Best-effort, never blocks rendering.
+  // Works for both the param-object path and the lookup path.
   useEffect(() => {
-    const found = catalog.packages.find((p) => p.slug === route.params.slug);
-    if (!found) return;
-    void recordPriceSnapshot(found.slug, getSearchPrice(found).display);
-    void recordViewed(found.slug);
-  }, [catalog.packages, route.params.slug]);
+    if (!pkg) return;
+    void recordPriceSnapshot(pkg.slug, getSearchPrice(pkg).display);
+    void recordViewed(pkg.slug);
+  }, [pkg]);
 
   // v2 item 87: load the saved note for this package.
   useEffect(() => {
@@ -95,14 +107,28 @@ export function PackageDetailScreen({ route, navigation }: Props) {
     };
   }, [route.params.slug]);
 
-  const pkg = catalog.packages.find((p) => p.slug === route.params.slug);
-
   if (!pkg) {
+    // v2.0.1 loading gate: NEVER render not-found while the shared
+    // catalogue is still loading — a live-only slug is simply absent
+    // from the bundled set until the background fetch settles.
+    if (catalog.loading) {
+      return (
+        <SafeAreaView style={[styles.notFound, { backgroundColor: colors.background }]}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>Loading package…</Text>
+        </SafeAreaView>
+      );
+    }
     return (
       <SafeAreaView style={[styles.notFound, { backgroundColor: colors.background }]}>
         <Text style={styles.notFoundText}>
           Sorry, this package could not be found.
         </Text>
+        <Pressable
+          style={[styles.button, styles.primaryButton, styles.retryButton]}
+          onPress={() => catalog.refresh()}>
+          <Text style={styles.primaryButtonText}>Retry</Text>
+        </Pressable>
       </SafeAreaView>
     );
   }
@@ -246,7 +272,10 @@ export function PackageDetailScreen({ route, navigation }: Props) {
                         key={s.slug}
                         style={styles.similarCard}
                         onPress={() =>
-                          navigation.push('PackageDetail', { slug: s.slug })
+                          navigation.push('PackageDetail', {
+                            slug: s.slug,
+                            package: s,
+                          })
                         }>
                         <Text style={styles.similarTitle} numberOfLines={2}>
                           {s.title}
@@ -297,68 +326,86 @@ export function PackageDetailScreen({ route, navigation }: Props) {
               }>
               <Text style={styles.primaryButtonText}>Pay</Text>
             </Pressable>
-            <Pressable
-              style={[styles.button, styles.secondaryButton]}
-              onPress={() => void handleShare()}>
-              <Text style={styles.secondaryButtonText}>Share package</Text>
-            </Pressable>
+            {/* v2.0.1: secondary actions regrouped into ONE compact
+                card of rows (label + chevron). Destinations and
+                handlers are unchanged — only the presentation moved
+                out of the giant stacked-button list. */}
+            <View style={styles.actionGroup}>
+              <Pressable
+                style={styles.actionRow}
+                onPress={() => void handleShare()}>
+                <Text style={styles.actionRowLabel}>Share package</Text>
+                <Text style={styles.actionRowChevron}>›</Text>
+              </Pressable>
+              <Pressable
+                style={styles.actionRow}
+                onPress={() => callAction()}>
+                <Text style={styles.actionRowLabel}>
+                  Call {CONTACT_PHONE_DISPLAY}
+                </Text>
+                <Text style={styles.actionRowChevron}>›</Text>
+              </Pressable>
+              <Pressable
+                style={styles.actionRow}
+                onPress={() => whatsappAction(enquiryMessage(pkg.title))}>
+                <Text style={styles.actionRowLabel}>WhatsApp</Text>
+                <Text style={styles.actionRowChevron}>›</Text>
+              </Pressable>
+              <Pressable
+                style={styles.actionRow}
+                onPress={() =>
+                  navigation.navigate('Tabs', {
+                    screen: 'Chat',
+                    params: { slug: pkg.slug, packageName: pkg.title },
+                  })
+                }>
+                <Text style={styles.actionRowLabel}>
+                  Chat about this package
+                </Text>
+                <Text style={styles.actionRowChevron}>›</Text>
+              </Pressable>
+              <Pressable
+                style={styles.actionRow}
+                onPress={() =>
+                  navigation.navigate('Trust', { packageName: pkg.title })
+                }>
+                <Text style={styles.actionRowLabel}>Why trust us</Text>
+                <Text style={styles.actionRowChevron}>›</Text>
+              </Pressable>
+              <Pressable
+                style={styles.actionRow}
+                onPress={() =>
+                  navigation.navigate('ReportIssue', {
+                    packageName: pkg.title,
+                  })
+                }>
+                <Text style={styles.actionRowLabel}>Report wrong info</Text>
+                <Text style={styles.actionRowChevron}>›</Text>
+              </Pressable>
+              <Pressable
+                style={styles.actionRow}
+                onPress={() =>
+                  navigation.navigate('GroupEnquiry', {
+                    packageName: pkg.title,
+                  })
+                }>
+                <Text style={styles.actionRowLabel}>
+                  Group / school booking
+                </Text>
+                <Text style={styles.actionRowChevron}>›</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.actionRow, styles.actionRowLast]}
+                onPress={() =>
+                  navigation.navigate('GiftTrip', { packageName: pkg.title })
+                }>
+                <Text style={styles.actionRowLabel}>Gift this trip</Text>
+                <Text style={styles.actionRowChevron}>›</Text>
+              </Pressable>
+            </View>
             {shareNote !== null ? (
               <Text style={styles.note}>{shareNote}</Text>
             ) : null}
-            <Pressable
-              style={[styles.button, styles.secondaryButton]}
-              onPress={() => callAction()}>
-              <Text style={styles.secondaryButtonText}>
-                Call {CONTACT_PHONE_DISPLAY}
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[styles.button, styles.secondaryButton]}
-              onPress={() => whatsappAction(enquiryMessage(pkg.title))}>
-              <Text style={styles.secondaryButtonText}>WhatsApp</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.button, styles.secondaryButton]}
-              onPress={() =>
-                navigation.navigate('Tabs', {
-                  screen: 'Chat',
-                  params: { slug: pkg.slug, packageName: pkg.title },
-                })
-              }>
-              <Text style={styles.secondaryButtonText}>
-                Chat about this package
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[styles.button, styles.secondaryButton]}
-              onPress={() =>
-                navigation.navigate('Trust', { packageName: pkg.title })
-              }>
-              <Text style={styles.secondaryButtonText}>Why trust us</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.button, styles.secondaryButton]}
-              onPress={() =>
-                navigation.navigate('ReportIssue', { packageName: pkg.title })
-              }>
-              <Text style={styles.secondaryButtonText}>Report wrong info</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.button, styles.secondaryButton]}
-              onPress={() =>
-                navigation.navigate('GroupEnquiry', { packageName: pkg.title })
-              }>
-              <Text style={styles.secondaryButtonText}>
-                Group / school booking
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[styles.button, styles.secondaryButton]}
-              onPress={() =>
-                navigation.navigate('GiftTrip', { packageName: pkg.title })
-              }>
-              <Text style={styles.secondaryButtonText}>Gift this trip</Text>
-            </Pressable>
             <Text style={[styles.sourceNote, { color: colors.muted }]}>
               {catalog.source === 'live'
                 ? 'Live catalogue'
@@ -557,6 +604,43 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontSize: FONT.body,
     fontWeight: WEIGHT.bold,
+  },
+  actionGroup: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: RADII.card,
+    overflow: 'hidden',
+  },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 44,
+    paddingHorizontal: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  actionRowLast: {
+    borderBottomWidth: 0,
+  },
+  actionRowLabel: {
+    flex: 1,
+    fontSize: 15,
+    color: COLORS.text,
+  },
+  actionRowChevron: {
+    fontSize: 20,
+    color: COLORS.muted,
+    marginLeft: SPACING.sm,
+  },
+  loadingText: {
+    fontSize: FONT.body,
+    color: COLORS.muted,
+    marginTop: SPACING.md,
+  },
+  retryButton: {
+    marginTop: SPACING.lg,
+    paddingHorizontal: 32,
   },
   notFound: {
     flex: 1,
