@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -10,7 +10,6 @@ import {
   View,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { BRAND } from '../constants';
 import { ApiError, submitEnquiry } from '../lib/api';
 import type { EnquiryInput } from '../lib/api';
 import { whatsappUrl } from '../lib/contact';
@@ -22,6 +21,8 @@ import {
 } from '../lib/drafts';
 import { loadProfile } from '../lib/settings';
 import { saveTrip } from '../lib/trips';
+import type { Palette } from '../theme/tokens';
+import { useSettings } from '../context/SettingsContext';
 import type { RootStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Enquiry'>;
@@ -29,6 +30,8 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Enquiry'>;
 export function EnquiryScreen({ route, navigation }: Props) {
   const { slug, packageName, travelerCount, travelerNames, contactPref } =
     route.params;
+  const { colors } = useSettings();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   // Captured when the form mounted (server anti-spam field).
   const formRenderedAtRef = useRef(0);
   // Captured after mount (server anti-spam field); submission always
@@ -231,6 +234,7 @@ export function EnquiryScreen({ route, navigation }: Props) {
         value={name}
         onChangeText={setName}
         placeholder="Your full name"
+        placeholderTextColor={colors.placeholderText}
         autoCapitalize="words"
       />
 
@@ -240,6 +244,7 @@ export function EnquiryScreen({ route, navigation }: Props) {
         value={phone}
         onChangeText={setPhone}
         placeholder="Mobile number"
+        placeholderTextColor={colors.placeholderText}
         keyboardType="phone-pad"
       />
 
@@ -249,6 +254,7 @@ export function EnquiryScreen({ route, navigation }: Props) {
         value={email}
         onChangeText={setEmail}
         placeholder="you@example.com"
+        placeholderTextColor={colors.placeholderText}
         keyboardType="email-address"
         autoCapitalize="none"
       />
@@ -259,6 +265,7 @@ export function EnquiryScreen({ route, navigation }: Props) {
         value={travelDate}
         onChangeText={setTravelDate}
         placeholder="YYYY-MM-DD"
+        placeholderTextColor={colors.placeholderText}
         autoCapitalize="none"
       />
 
@@ -268,6 +275,7 @@ export function EnquiryScreen({ route, navigation }: Props) {
         value={travellers}
         onChangeText={setTravellers}
         placeholder="e.g. 2"
+        placeholderTextColor={colors.placeholderText}
         keyboardType="number-pad"
       />
 
@@ -277,6 +285,7 @@ export function EnquiryScreen({ route, navigation }: Props) {
         value={message}
         onChangeText={setMessage}
         placeholder="Anything we should know?"
+        placeholderTextColor={colors.placeholderText}
         multiline
       />
 
@@ -319,20 +328,22 @@ export function EnquiryScreen({ route, navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: BRAND.background },
+function makeStyles(c: Palette) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.background },
   body: { padding: 16, paddingBottom: 32 },
-  packageLabel: { fontSize: 13, color: BRAND.muted },
-  packageName: { fontSize: 18, fontWeight: '700', color: BRAND.text, marginTop: 4 },
-  label: { fontSize: 14, fontWeight: '700', color: BRAND.text, marginTop: 16 },
+  packageLabel: { fontSize: 13, color: c.muted },
+  packageName: { fontSize: 18, fontWeight: '700', color: c.text, marginTop: 4 },
+  label: { fontSize: 14, fontWeight: '700', color: c.text, marginTop: 16 },
   input: {
     borderWidth: 1,
-    borderColor: BRAND.border,
+    borderColor: c.border,
+    backgroundColor: c.inputBg,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 11,
     fontSize: 16,
-    color: BRAND.text,
+    color: c.text,
     marginTop: 6,
   },
   messageInput: { minHeight: 90, textAlignVertical: 'top' },
@@ -344,7 +355,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 16,
   },
-  primaryButton: { backgroundColor: BRAND.primary },
+  primaryButton: { backgroundColor: c.primary },
   whatsappButton: { backgroundColor: '#25D366' },
   disabled: { opacity: 0.6 },
   buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
@@ -352,11 +363,12 @@ const styles = StyleSheet.create({
     marginTop: 16,
     padding: 12,
     borderRadius: 10,
-    backgroundColor: '#FDECEC',
+    backgroundColor: c.errorBg,
   },
-  errorText: { fontSize: 14, color: '#7A1F1F', marginBottom: 6, lineHeight: 20 },
-  successTitle: { fontSize: 22, fontWeight: '700', color: BRAND.text },
-  text: { fontSize: 16, color: BRAND.text, marginTop: 10, lineHeight: 22 },
+  errorText: { fontSize: 14, color: c.errorText, marginBottom: 6, lineHeight: 20 },
+  successTitle: { fontSize: 22, fontWeight: '700', color: c.text },
+  text: { fontSize: 16, color: c.text, marginTop: 10, lineHeight: 22 },
   bold: { fontWeight: '700' },
-  note: { fontSize: 13, color: BRAND.muted, marginTop: 12, lineHeight: 18 },
-});
+  note: { fontSize: 13, color: c.muted, marginTop: 12, lineHeight: 18 },
+  });
+}

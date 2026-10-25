@@ -454,7 +454,7 @@ export function BlogArticleScreen({ route, navigation }: Props) {
   // Native renderer.
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.progressTrack}>
+      <View style={[styles.progressTrack, { backgroundColor: colors.border }]}>
         <View
           style={[
             styles.progressFill,
@@ -671,7 +671,7 @@ const styles = StyleSheet.create({
   relatedSection: { marginTop: SPACING.xl },
   relatedCard: { borderWidth: 1, borderRadius: RADII.card, padding: SPACING.md, marginTop: SPACING.sm },
   fallbackHeader: { padding: SPACING.lg, paddingBottom: SPACING.sm },
-  progressTrack: { height: 4, backgroundColor: '#E0E0E0' },
+  progressTrack: { height: 4 },
   progressFill: { height: 4, backgroundColor: '#127C82' },
   articleBody: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
   articleTitle: { fontWeight: WEIGHT.bold, lineHeight: 30 },

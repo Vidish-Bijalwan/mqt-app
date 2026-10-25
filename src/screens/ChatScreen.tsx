@@ -26,6 +26,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { ApiError, submitEnquiry } from '../lib/api';
 import {
@@ -67,6 +68,16 @@ const FAQS = [
 export function ChatScreen({ route }: Props) {
   const params = route.params ?? {};
   const { colors, fs, t } = useSettings();
+  // v2.0.2 banner only: the composer below is untouched. The tab
+  // navigator does not own SupportChat, so navigate via the parent
+  // stack (cast, same pattern as TripsScreen's planner navigation).
+  const tabNavigation = useNavigation();
+  const openInstantChat = () => {
+    (tabNavigation.navigate as unknown as (r: string, p?: object) => void)(
+      'SupportChat',
+      {},
+    );
+  };
   const formRenderedAtRef = useRef(0);
   useEffect(() => {
     formRenderedAtRef.current = Date.now();
@@ -206,6 +217,20 @@ export function ChatScreen({ route }: Props) {
         <Text style={[styles.title, { color: colors.text, fontSize: fs(FONT.title) }]}>
           {t('chatTitle')}
         </Text>
+
+        {/*
+         * v2.0.2 banner (composer below untouched): instant chat is a
+         * real API conversation on the SupportChat screen, not a
+         * replacement for this message-the-team form.
+         */}
+        <Pressable
+          style={[styles.instantBanner, { borderColor: colors.primary }]}
+          onPress={openInstantChat}
+          accessibilityLabel="Open instant support chat">
+          <Text style={[styles.instantBannerText, { color: colors.primary, fontSize: fs(FONT.body) }]}>
+            Want instant answers? Try MQT Support instant chat →
+          </Text>
+        </Pressable>
 
         {params.packageName ? (
           <View style={[styles.contextBox, { backgroundColor: colors.estimatedBg }]}>
@@ -441,6 +466,14 @@ const styles = StyleSheet.create({
     borderRadius: RADII.button,
   },
   slotText: { fontSize: FONT.body, fontWeight: WEIGHT.bold },
+  instantBanner: {
+    borderWidth: 1,
+    borderRadius: RADII.button,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.md,
+    marginTop: SPACING.md,
+  },
+  instantBannerText: { fontWeight: WEIGHT.bold, lineHeight: 20 },
   faq: { borderBottomWidth: 1, paddingVertical: SPACING.md },
   faqQ: { fontWeight: WEIGHT.bold },
   faqA: { marginTop: SPACING.xs, lineHeight: 22 },

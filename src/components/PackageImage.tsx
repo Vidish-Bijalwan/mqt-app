@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { COLORS, DURATIONS } from '../theme/tokens';
+import { DURATIONS } from '../theme/tokens';
+import type { Palette } from '../theme/tokens';
 import { useSettings } from '../context/SettingsContext';
 import { lowDataOptimizedUrl } from '../lib/lowdata';
 import { SITE_BASE_URL } from '../data/packages';
@@ -51,7 +52,13 @@ export function PackageImage({ uri, height }: Props) {
   // width (w=640) for site photos; external URLs never go through the
   // optimizer (lowDataOptimizedUrl returns null for them, and we fall
   // back to the standard w=750 URL).
-  const { settings } = useSettings();
+  const { colors, settings } = useSettings();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  // Hooks must stay above the early return below: this tracks whether
+  // the current uri's photo has loaded (see the skeleton comment at
+  // the render site). Keyed by uri, so a new photo resets it.
+  const [loadedUri, setLoadedUri] = useState<string | null>(null);
+  const photoLoaded = loadedUri === uri;
   const optimized = useMemo(
     () =>
       uri
@@ -85,15 +92,26 @@ export function PackageImage({ uri, height }: Props) {
   }
 
   const sourceUri = stage === 'optimized' && optimized ? optimized : uri;
+  // v2.0.2 finger-fast detail: the detail screen already renders its
+  // title/price/actions instantly (v2.0.1 param passthrough); the
+  // skeleton below is what the photo area shows while the photo itself
+  // loads. It is NOT a fake photo: it disappears the moment the real
+  // photo loads (onLoad).
 
   return (
     <View style={[styles.container, { height }]}>
+      {!photoLoaded ? (
+        <View style={styles.skeleton}>
+          <Text style={styles.skeletonText}>Loading photo…</Text>
+        </View>
+      ) : null}
       <Image
         source={{ uri: sourceUri }}
         style={styles.image}
         contentFit="cover"
         cachePolicy="memory-disk"
         transition={DURATIONS.fast}
+        onLoad={() => setLoadedUri(uri)}
         onError={() => {
           if (stage === 'optimized' || stage === 'original') {
             setErrored({ uri, stage });
@@ -104,10 +122,24 @@ export function PackageImage({ uri, height }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(c: Palette) {
+  return StyleSheet.create({
   container: {
     width: '100%',
-    backgroundColor: COLORS.placeholderBg,
+    backgroundColor: c.placeholderBg,
+  },
+  skeleton: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  skeletonText: {
+    color: c.placeholderText,
+    fontSize: 14,
   },
   image: {
     width: '100%',
@@ -115,12 +147,13 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     width: '100%',
-    backgroundColor: COLORS.placeholderBg,
+    backgroundColor: c.placeholderBg,
     alignItems: 'center',
     justifyContent: 'center',
   },
   placeholderText: {
-    color: COLORS.placeholderText,
+    color: c.placeholderText,
     fontSize: 14,
   },
-});
+  });
+}

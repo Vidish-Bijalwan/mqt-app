@@ -292,7 +292,7 @@ export function SearchScreen({ navigation, route }: Props) {
               {history.map((item) => (
                 <Pressable
                   key={item}
-                  style={styles.historyChip}
+                  style={[styles.historyChip, { borderColor: colors.border }]}
                   onPress={() => setQuery(item)}>
                   <Text style={[styles.historyText, { color: colors.text }]}>
                     {item}
@@ -300,7 +300,7 @@ export function SearchScreen({ navigation, route }: Props) {
                 </Pressable>
               ))}
               <Pressable
-                style={styles.historyChip}
+                style={[styles.historyChip, { borderColor: colors.border }]}
                 onPress={() => {
                   void clearSearchHistory().then(() => setHistory([]));
                 }}>
@@ -464,7 +464,6 @@ const styles = StyleSheet.create({
   },
   historyChip: {
     borderWidth: 1,
-    borderColor: '#E0E0E0',
     borderRadius: 20,
     paddingHorizontal: 12,
     minHeight: 40,

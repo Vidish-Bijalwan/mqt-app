@@ -23,6 +23,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.0.2',
+    title: "What's new in v2.0.2",
+    items: [
+      'Dark mode now works on every screen: text, cards, inputs and booking screens follow the theme instead of staying light.',
+      'Faster package details: list photos are preloaded, so tapping a card shows the title, price and actions instantly while the photo finishes loading.',
+      'Instant support chat: MQT Support answers instantly from Amit’s team, with quick replies, package/enquiry/booking actions, and forwarding to Amit on WhatsApp or as an enquiry.',
+      'Catalogue Refresh now also clears the cached photos, so a refreshed catalogue shows the latest images.',
+      'Smoother feel: subtle card press feedback, gentle list entrances and a branded launch screen, all respecting reduced-motion.',
+    ],
+  },
+  {
     version: '2.0.1',
     title: "What's new in v2.0.1",
     items: [

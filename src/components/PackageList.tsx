@@ -4,7 +4,6 @@ import {
   FlatList,
   Linking,
   Platform,
-  Pressable,
   RefreshControl,
   Share,
   StyleSheet,
@@ -21,8 +20,11 @@ import { callAction } from '../lib/contact';
 // whatsappEnquiryUrl lives in src/constants.ts (not src/lib/contact.ts,
 // despite the v1.1 brief's wording); it builds the same wa.me deep link.
 import { whatsappEnquiryUrl } from '../constants';
-import { PackageImage } from './PackageImage';
+import { PackageImage, optimizedImageUrl } from './PackageImage';
+import { lowDataOptimizedUrl } from '../lib/lowdata';
+import { Image as ExpoImage } from 'expo-image';
 import { PriceBlock } from './PriceBlock';
+import { FadeInView, PressScale } from './Motion';
 
 interface Props {
   packages: Package[];
@@ -52,6 +54,12 @@ interface Props {
  * Share, Enquire, Call, WhatsApp. No compare/wishlist — those features
  * do not exist yet and must not be offered.
  */
+// Module-level: VirtualizedList throws ("Changing ... on the fly is
+// not supported") and unmounts the whole tree if onViewableItemsChanged
+// or viewabilityConfig change identity between renders, so both must
+// be referentially stable for the life of the list.
+const VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 50 };
+
 export function PackageList({
   packages,
   onPressPackage,
@@ -64,7 +72,48 @@ export function PackageList({
   onToggleCompare,
   isInCompare,
 }: Props) {
-  const { colors, fs } = useSettings();
+  const { colors, fs, settings } = useSettings();
+  // v2.0.2 finger-fast detail: when the visible set changes, prefetch
+  // the EXACT optimizer URLs the detail screen will request for those
+  // cards (see PackageImage: w=750, or w=640 in low-data mode), so a
+  // tap hits the expo-image disk cache instead of a slow download.
+  // Fire-and-forget and deduped: prefetching never delays rendering
+  // or navigation, and a failure is silently ignored (the detail's
+  // own image pipeline still loads the photo, with its placeholder).
+  const prefetchedRef = React.useRef(new Set<string>());
+  // dataSaver is read through a ref so prefetchVisible (and therefore
+  // the FlatList handler below) keeps a stable identity even if the
+  // setting toggles — a changing onViewableItemsChanged identity is a
+  // fatal VirtualizedList error on web (it unmounts the whole tree).
+  const dataSaverRef = React.useRef(settings.dataSaver);
+  React.useEffect(() => {
+    dataSaverRef.current = settings.dataSaver;
+  }, [settings.dataSaver]);
+  const prefetchVisible = React.useCallback((items: { item: Package }[]) => {
+    const urls: string[] = [];
+    for (const { item } of items) {
+      const raw = packageImageUrl(item);
+      const detailUrl =
+        raw !== null
+          ? (dataSaverRef.current
+              ? lowDataOptimizedUrl(raw)
+              : null) ?? optimizedImageUrl(raw) ?? raw
+          : null;
+      if (detailUrl !== null && !prefetchedRef.current.has(detailUrl)) {
+        prefetchedRef.current.add(detailUrl);
+        urls.push(detailUrl);
+      }
+    }
+    if (urls.length > 0) {
+      void ExpoImage.prefetch(urls, 'memory-disk').catch(() => undefined);
+    }
+  }, []);
+  const handleViewableItemsChanged = React.useCallback(
+    ({ viewableItems }: { viewableItems: { item: Package }[] }) => {
+      prefetchVisible(viewableItems);
+    },
+    [prefetchVisible],
+  );
   return (
     <FlatList
       data={packages}
@@ -86,19 +135,23 @@ export function PackageList({
           <RefreshControl refreshing={refreshing ?? false} onRefresh={onRefresh} />
         ) : undefined
       }
-      renderItem={({ item }) => (
-        <PackageCard
-          pkg={item}
-          onPress={() => onPressPackage(item)}
-          onLongPress={() =>
-            showCardActions(item, onEnquirePackage, {
-              onToggleWishlist,
-              isWishlisted,
-              onToggleCompare,
-              isInCompare,
-            })
-          }
-        />
+      onViewableItemsChanged={handleViewableItemsChanged}
+      viewabilityConfig={VIEWABILITY_CONFIG}
+      renderItem={({ item, index }) => (
+        <FadeInView index={index}>
+          <PackageCard
+            pkg={item}
+            onPress={() => onPressPackage(item)}
+            onLongPress={() =>
+              showCardActions(item, onEnquirePackage, {
+                onToggleWishlist,
+                isWishlisted,
+                onToggleCompare,
+                isInCompare,
+              })
+            }
+          />
+        </FadeInView>
       )}
     />
   );
@@ -170,7 +223,7 @@ function PackageCard({
   const { colors, fs } = useSettings();
   const price = getPriceInfo(pkg);
   return (
-    <Pressable
+    <PressScale
       onPress={onPress}
       onLongPress={onLongPress}
       style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -186,7 +239,7 @@ function PackageCard({
         </Text>
         <PriceBlock price={price} />
       </View>
-    </Pressable>
+    </PressScale>
   );
 }
 

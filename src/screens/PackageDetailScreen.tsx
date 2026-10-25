@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -12,7 +12,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { COLORS, DURATIONS, FONT, RADII, SPACING, TOUCH_MIN, WEIGHT } from '../theme/tokens';
+import { DURATIONS, FONT, RADII, SPACING, TOUCH_MIN, WEIGHT } from '../theme/tokens';
+import type { Palette } from '../theme/tokens';
 import {
   callAction,
   CONTACT_PHONE_DISPLAY,
@@ -61,6 +62,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'PackageDetail'>;
 export function PackageDetailScreen({ route, navigation }: Props) {
   const catalog = useCatalog();
   const { colors } = useSettings();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [photoAnim] = useState(() => new Animated.Value(0));
   const [shareNote, setShareNote] = useState<string | null>(null);
   // v2 item 87: personal note for this package, device-local.
@@ -114,7 +116,7 @@ export function PackageDetailScreen({ route, navigation }: Props) {
     if (catalog.loading) {
       return (
         <SafeAreaView style={[styles.notFound, { backgroundColor: colors.background }]}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>Loading package…</Text>
         </SafeAreaView>
       );
@@ -447,10 +449,11 @@ export function PackageDetailScreen({ route, navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(c: Palette) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: c.background,
   },
   scroll: {
     flex: 1,
@@ -460,28 +463,28 @@ const styles = StyleSheet.create({
   },
   caption: {
     fontSize: FONT.meta,
-    color: COLORS.muted,
+    color: c.muted,
     marginTop: SPACING.sm,
   },
   title: {
     fontSize: FONT.title,
     fontWeight: WEIGHT.bold,
-    color: COLORS.text,
+    color: c.text,
     marginTop: SPACING.xs,
   },
   meta: {
     fontSize: 14,
-    color: COLORS.muted,
+    color: c.muted,
     marginTop: 6,
   },
   priceNote: {
     fontSize: FONT.meta,
-    color: COLORS.muted,
+    color: c.muted,
     marginTop: SPACING.sm,
   },
   note: {
     fontSize: FONT.meta,
-    color: COLORS.muted,
+    color: c.muted,
     marginTop: SPACING.sm,
     lineHeight: 18,
   },
@@ -489,7 +492,7 @@ const styles = StyleSheet.create({
     marginTop: SPACING.lg,
     paddingTop: SPACING.md,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopColor: c.border,
   },
   noteLabel: {
     fontSize: FONT.body,
@@ -513,13 +516,13 @@ const styles = StyleSheet.create({
   sectionHeading: {
     fontSize: FONT.heading,
     fontWeight: WEIGHT.bold,
-    color: COLORS.text,
+    color: c.text,
     marginTop: 20,
   },
   sectionText: {
     fontSize: FONT.body,
     lineHeight: 22,
-    color: COLORS.text,
+    color: c.text,
     marginTop: 6,
   },
   stopRow: {
@@ -532,8 +535,8 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: COLORS.primary,
-    color: COLORS.white,
+    backgroundColor: c.primary,
+    color: c.white,
     textAlign: 'center',
     lineHeight: 24,
     fontSize: FONT.meta,
@@ -544,7 +547,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: FONT.body,
     lineHeight: 22,
-    color: COLORS.text,
+    color: c.text,
   },
   similarRow: {
     flexDirection: 'row',
@@ -555,25 +558,25 @@ const styles = StyleSheet.create({
   similarCard: {
     width: 220,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: c.border,
     borderRadius: RADII.card,
     padding: SPACING.md,
   },
   similarTitle: {
     fontSize: FONT.body,
     fontWeight: WEIGHT.bold,
-    color: COLORS.text,
+    color: c.text,
     lineHeight: 20,
   },
   similarMeta: {
     fontSize: FONT.meta,
-    color: COLORS.muted,
+    color: c.muted,
     marginTop: SPACING.xs,
   },
   similarPrice: {
     fontSize: FONT.body,
     fontWeight: WEIGHT.bold,
-    color: COLORS.primary,
+    color: c.primary,
     marginTop: SPACING.sm,
   },
   actions: {
@@ -589,25 +592,25 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
   },
   primaryButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: c.primary,
   },
   primaryButtonText: {
-    color: COLORS.white,
+    color: c.white,
     fontSize: FONT.body,
     fontWeight: WEIGHT.bold,
   },
   secondaryButton: {
     borderWidth: 1,
-    borderColor: COLORS.primary,
+    borderColor: c.primary,
   },
   secondaryButtonText: {
-    color: COLORS.primary,
+    color: c.primary,
     fontSize: FONT.body,
     fontWeight: WEIGHT.bold,
   },
   actionGroup: {
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: c.border,
     borderRadius: RADII.card,
     overflow: 'hidden',
   },
@@ -618,7 +621,7 @@ const styles = StyleSheet.create({
     minHeight: 44,
     paddingHorizontal: SPACING.md,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: c.border,
   },
   actionRowLast: {
     borderBottomWidth: 0,
@@ -626,16 +629,16 @@ const styles = StyleSheet.create({
   actionRowLabel: {
     flex: 1,
     fontSize: 15,
-    color: COLORS.text,
+    color: c.text,
   },
   actionRowChevron: {
     fontSize: 20,
-    color: COLORS.muted,
+    color: c.muted,
     marginLeft: SPACING.sm,
   },
   loadingText: {
     fontSize: FONT.body,
-    color: COLORS.muted,
+    color: c.muted,
     marginTop: SPACING.md,
   },
   retryButton: {
@@ -647,11 +650,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: SPACING.xl,
-    backgroundColor: COLORS.background,
+    backgroundColor: c.background,
   },
   notFoundText: {
     fontSize: FONT.body,
-    color: COLORS.muted,
+    color: c.muted,
     textAlign: 'center',
   },
-});
+  });
+}
